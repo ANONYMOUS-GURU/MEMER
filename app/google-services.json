@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "512849101582",
+    "project_id": "memer-9610a",
+    "storage_bucket": "memer-9610a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:512849101582:android:da1d514621e00ebd808d5f",
+        "android_client_info": {
+          "package_name": "com.example.memer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "512849101582-6795omk81mdutcq0v30olhgkqgsf1kd4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUqF26DKL25TX5WIlEUZquxtHqQMA1i9s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "512849101582-6795omk81mdutcq0v30olhgkqgsf1kd4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

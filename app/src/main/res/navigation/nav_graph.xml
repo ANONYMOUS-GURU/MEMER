@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/fragmentHomePage">
+
+    <fragment
+        android:id="@+id/fragmentHomePage"
+        android:name="com.example.memer.FRAGMENTS.FragmentHomePage"
+        tools:layout="@layout/fragment_home_page">
+        <action
+            android:id="@+id/action_fragmentHomePage_to_fragmentChat"
+            app:destination="@id/fragmentChat" />
+        <action
+            android:id="@+id/action_fragmentHomePage_to_fragmentRandomUserProfile"
+            app:destination="@id/fragmentRandomUserProfile" />
+        <action
+            android:id="@+id/action_fragmentHomePage_to_fragmentComments"
+            app:destination="@id/fragmentComments" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentAddPost"
+        android:name="com.example.memer.FRAGMENTS.FragmentAddPost"
+        tools:layout="@layout/fragment_add_post" />
+    <fragment
+        android:id="@+id/fragmentChat"
+        android:name="com.example.memer.FRAGMENTS.FragmentChat"
+        tools:layout="@layout/fragment_chat" />
+    <fragment
+        android:id="@+id/fragmentLogIn"
+        android:name="com.example.memer.FRAGMENTS.FragmentLogIn"
+        tools:layout="@layout/fragment_log_in">
+        <action
+            android:id="@+id/action_fragmentLogIn_to_fragmentHomePage"
+            app:destination="@id/fragmentHomePage"
+            app:popUpTo="@+id/nav_graph"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_fragmentLogIn_to_fragmentProfile"
+            app:destination="@id/fragmentProfile" />
+        <action
+            android:id="@+id/action_fragmentLogIn_to_fragmentEditProfile"
+            app:destination="@id/fragmentEditProfile" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentEditProfile"
+        android:name="com.example.memer.FRAGMENTS.FragmentEditProfile"
+        tools:layout="@layout/fragment_edit_profile">
+        <action
+            android:id="@+id/action_fragmentEditProfile_to_fragmentHomePage"
+            app:destination="@id/fragmentHomePage"
+            app:popUpTo="@+id/nav_graph"
+            app:popUpToInclusive="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentUserActivity"
+        android:name="com.example.memer.FRAGMENTS.FragmentNotifications"
+        tools:layout="@layout/fragment_user_activity" />
+    <fragment
+        android:id="@+id/fragmentSearch"
+        android:name="com.example.memer.FRAGMENTS.FragmentSearch"
+        tools:layout="@layout/fragment_search" >
+        <action
+            android:id="@+id/action_fragmentSearch_to_fragmentSearchResult"
+            app:destination="@id/fragmentSearchResult" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentProfile"
+        android:name="com.example.memer.FRAGMENTS.FragmentProfile"
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_fragmentProfile_to_fragmentAddPost"
+            app:destination="@id/fragmentAddPost" />
+        <action
+            android:id="@+id/action_fragmentProfile_to_fragmentEditProfile"
+            app:destination="@id/fragmentEditProfile" />
+    </fragment>
+    <action
+        android:id="@+id/action_global_fragmentLogIn"
+        app:destination="@id/fragmentLogIn"
+        app:launchSingleTop="false"
+        app:popUpTo="@+id/nav_graph"
+        app:popUpToInclusive="true" />
+    <fragment
+        android:id="@+id/fragmentSearchResult"
+        android:name="com.example.memer.FRAGMENTS.FragmentSearchResult"
+        tools:layout="@layout/fragment_search_result" />
+    <fragment
+        android:id="@+id/fragmentRandomUserProfile"
+        android:name="com.example.memer.FRAGMENTS.FragmentRandomUserProfile"
+        android:label="fragment_random_user_profile"
+        tools:layout="@layout/fragment_random_user_profile" />
+    <fragment
+        android:id="@+id/fragmentComments"
+        android:name="com.example.memer.FRAGMENTS.FragmentComments"
+        android:label="fragment_comments"
+        tools:layout="@layout/fragment_comments" >
+        <action
+            android:id="@+id/action_fragmentComments_to_fragmentRandomUserProfile"
+            app:destination="@id/fragmentRandomUserProfile" />
+        <action
+            android:id="@+id/action_fragmentComments_to_fragmentProfile"
+            app:destination="@id/fragmentProfile" />
+    </fragment>
+</navigation>
