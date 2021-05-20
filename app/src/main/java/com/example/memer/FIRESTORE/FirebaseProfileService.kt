@@ -1,7 +1,6 @@
-package com.example.memer.DATABASE
+package com.example.memer.FIRESTORE
 
 import android.util.Log
-import android.widget.Toast
 import com.example.memer.MODELS.User
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore

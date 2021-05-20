@@ -3,61 +3,77 @@ package com.example.memer.VIEWMODELS
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.memer.HELPERS.DataSource
+import com.example.memer.FIRESTORE.UserDb
+import com.example.memer.HELPERS.MyUser
 import com.example.memer.MODELS.UserEditableInfo
 import com.example.memer.MODELS.UserNonEditInfo
-import com.example.memer.MODELS.UserProfileInfo
 
 class ViewModelUserInfo : ViewModel() {
 
     private var userEdit:UserEditableInfo = UserEditableInfo()
     private var userNonEditInfo:UserNonEditInfo = UserNonEditInfo()
-    private var userId : String? = null
-    private var userImageReference:String? = null
+    private var userImageReference:Pair<String?,String?> = null to null
 
-    private val userEditLiveData:MutableLiveData<UserEditableInfo> = MutableLiveData<UserEditableInfo>()
-    private val userNonEditInfoLiveData:MutableLiveData<UserNonEditInfo> = MutableLiveData<UserNonEditInfo>()
-    private val userIdLiveData:MutableLiveData<String?> = MutableLiveData<String?>()
-    private val userImageReferenceLiveData:MutableLiveData<String?> = MutableLiveData<String?>()
+    private val userEditMutableLiveData:MutableLiveData<UserEditableInfo> = MutableLiveData<UserEditableInfo>()
+    private val userNonEditInfoMutableLiveData:MutableLiveData<UserNonEditInfo> = MutableLiveData<UserNonEditInfo>()
+    private val userIdMutableLiveData:MutableLiveData<String?> = MutableLiveData<String?>()
+    private val userImageReferenceMutableLiveData:MutableLiveData<Pair<String?,String?>> = MutableLiveData<Pair<String?,String?>>()
+
+    val userEditLiveData:LiveData<UserEditableInfo>
+        get() = userEditMutableLiveData
+
+    val userNonEditInfoLiveData:LiveData<UserNonEditInfo>
+        get() = userNonEditInfoMutableLiveData
+
+    val userImageReferenceLiveData:LiveData<Pair<String?,String?>>
+        get() = userImageReferenceMutableLiveData
+
 
     init {
-        userId = DataSource.getUserId()
-        userEdit = DataSource.getFakeUserEditableInfo(userId)
-        userNonEditInfo = DataSource.getFakeUserNonEditInfo(userId)
-        userImageReference = DataSource.getUserImageReference(userId)
+        val mUser = MyUser.getUser() !!
+        userEdit = getUserEditableInfo(mUser)
+        userNonEditInfo = getUserNonEditInfo(mUser)
+        userImageReference = getUserImageReference(mUser)
 
-        userEditLiveData.value = userEdit
-        userNonEditInfoLiveData.value = userNonEditInfo
-        userIdLiveData.value = userId
-        userImageReferenceLiveData.value = userImageReference
+        userEditMutableLiveData.value = userEdit
+        userNonEditInfoMutableLiveData.value = userNonEditInfo
+        userImageReferenceMutableLiveData.value = userImageReference
     }
 
-    fun getUserEditInfo():LiveData<UserEditableInfo>{
-        return userEditLiveData
+    private fun getUserEditableInfo(mUser:MyUser.UserData) : UserEditableInfo{
+        return UserEditableInfo(
+            nameOfUser = mUser.nameOfUser,
+            username = mUser.username,
+            bio = mUser.bio
+        )
     }
+    private fun getUserNonEditInfo(mUser:MyUser.UserData) : UserNonEditInfo{
+        return UserNonEditInfo(
+            followersCount = mUser.userFollowers.size,
+            followingCount = mUser.userFollowing.size,
+            postCount = mUser.postsReference.size
+        )
+    }
+    private fun getUserImageReference(mUser: MyUser.UserData) : Pair<String?,String?>{
+        return mUser.userProfilePicReference to mUser.userAvatarReference
+    }
+
+
+
 
     fun updateUserEditInfo(_user:UserEditableInfo){
-        userEditLiveData.value=_user
+        UserDb.updateEditableInfo(_user)
+        userEditMutableLiveData.value=_user
     }
-
-    fun getUserNonEditInfo():LiveData<UserNonEditInfo>{
-        return userNonEditInfoLiveData
-    }
-
     fun updateUserNonEditInfo(_user:UserNonEditInfo){
-        userNonEditInfoLiveData.value=_user
+        userNonEditInfoMutableLiveData.value=_user
+    }
+    fun updateUserImageReference(_user:Pair<String?,String?>){
+        UserDb.updateImageReference(_user)
+        userImageReferenceMutableLiveData.value=_user
+
     }
 
-    fun getUserImageReference():LiveData<String?>{
-        return userImageReferenceLiveData
-    }
 
-    fun updateUserImageReference(_user:String?){
-        userImageReferenceLiveData.value=_user
-    }
-
-    fun getUserId():String?{
-        return userIdLiveData.value
-    }
 
 }

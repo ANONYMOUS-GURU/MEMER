@@ -13,9 +13,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
-import com.example.memer.DATABASE.FirebaseProfileService.userCoroutine
 import com.example.memer.HELPERS.GLOBAL_INFORMATION
 import com.example.memer.HELPERS.LoadingDialog
+import com.example.memer.HELPERS.MyUser
 import com.example.memer.databinding.FragmentLogInBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -29,6 +29,11 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
 import com.example.memer.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FragmentLogIn : Fragment(), View.OnClickListener {
 
@@ -268,7 +273,7 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         mAuth.signInWithCredential(credential)
             .addOnCompleteListener(requireActivity()) { task ->
-                loadingDialog.dismissDialog()
+                loadingDialog.changeText("Loading User ... ")
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
                     Log.d(TAG, "signInWithCredential:success")
@@ -276,23 +281,20 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
 
                     val isNewUser = task.result?.additionalUserInfo?.isNewUser == true
 
-                    if (user != null && isNewUser) {
-                        val name = user.displayName
-                        if (name != null) {
-                            userCoroutine(user.uid, name, user.uid, ACCESS_GOOGLE, null)
-                        } else {
-                            userCoroutine(
-                                user.uid,
-                                (user.uid.subSequence(0, 5)).toString(),
-                                user.uid,
-                                ACCESS_GOOGLE,
-                                null
-                            )
+                    CoroutineScope(IO).launch {
+                        if(user!=null){
+                            if(isNewUser)
+                                updateUserInfo(user)
+                            else {
+                                Log.d(TAG, "firebaseAuthWithGoogle: Start getting user data")
+                                MyUser.authenticateUser(user)
+                            }
+                        }
+
+                        withContext(Dispatchers.Main){
+                            updateUI(user, ACCESS_GOOGLE, isNewUser)
                         }
                     }
-
-
-                    updateUI(user, ACCESS_GOOGLE, isNewUser)
                 } else {
                     // If sign in fails, display a message to the user.
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
@@ -302,7 +304,7 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     }
 
     private fun updateUI(user: FirebaseUser?, accessType: String, isNewUser: Boolean = false) {
-
+        loadingDialog.dismissDialog()
         when (user) {
             null -> {
                 Toast.makeText(context, "$accessType Sign In Failed", Toast.LENGTH_SHORT).show()
@@ -312,12 +314,39 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
                 Toast.makeText(context, "Sign In With $accessType Successful", Toast.LENGTH_SHORT)
                     .show()
                 when (isNewUser) {
-                    true -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentHomePage)
+                    true -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentEditProfile)
                     false -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentHomePage)
                 }
             }
         }
 
+    }
+
+    private suspend fun updateUserInfo(user:FirebaseUser?){
+        if (user != null) {
+            val name = user.displayName
+            if (name != null) {
+                MyUser.updateNewUser(
+                    MyUser.UserBasicInfo(
+                        userId = user.uid,
+                        nameOfUser = name,
+                        username = user.uid,
+                        signInType = ACCESS_GOOGLE,
+                        phoneNumber = null,
+                    )
+                )
+            } else {
+                MyUser.updateNewUser(
+                    MyUser.UserBasicInfo(
+                        userId = user.uid,
+                        nameOfUser = (user.uid.subSequence(0, 5)).toString(),
+                        username = user.uid,
+                        signInType = ACCESS_GOOGLE,
+                        phoneNumber = null,
+                    )
+                )
+            }
+        }
     }
 
 }

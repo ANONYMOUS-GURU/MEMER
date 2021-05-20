@@ -41,7 +41,9 @@
             app:destination="@id/fragmentProfile" />
         <action
             android:id="@+id/action_fragmentLogIn_to_fragmentEditProfile"
-            app:destination="@id/fragmentEditProfile" />
+            app:destination="@id/fragmentEditProfile"
+            app:popUpTo="@+id/nav_graph"
+            app:popUpToInclusive="true"/>
     </fragment>
     <fragment
         android:id="@+id/fragmentEditProfile"
@@ -52,6 +54,11 @@
             app:destination="@id/fragmentHomePage"
             app:popUpTo="@+id/nav_graph"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_fragmentEditProfile_to_fragmentProfile"
+            app:destination="@id/fragmentProfile"
+            app:popUpTo="@+id/nav_graph"
+            app:popUpToInclusive="true"/>
     </fragment>
     <fragment
         android:id="@+id/fragmentUserActivity"

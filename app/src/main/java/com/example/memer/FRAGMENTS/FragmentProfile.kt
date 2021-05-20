@@ -5,8 +5,7 @@ import android.view.*
 import androidx.fragment.app.Fragment
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
+
 import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
@@ -18,7 +17,6 @@ import com.bumptech.glide.request.RequestOptions
 import com.example.memer.ADAPTERS.AdapterFragmentProfile
 import com.example.memer.MODELS.UserEditableInfo
 import com.example.memer.MODELS.UserNonEditInfo
-import com.example.memer.MODELS.UserProfileInfo
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentProfileBinding
@@ -27,7 +25,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.fragment_edit_profile.*
 
 class FragmentProfile : Fragment(), View.OnClickListener {
 
@@ -44,14 +41,14 @@ class FragmentProfile : Fragment(), View.OnClickListener {
 
         mAuth = Firebase.auth
 
-        viewModel.getUserEditInfo().observe(viewLifecycleOwner, Observer {
-            getUserData(viewModel.getUserEditInfo().value)
+        viewModel.userEditLiveData.observe(viewLifecycleOwner, Observer {
+            getUserData(it)
         })
-        viewModel.getUserNonEditInfo().observe(viewLifecycleOwner, Observer {
-            getUserData(viewModel.getUserNonEditInfo().value)
+        viewModel.userNonEditInfoLiveData.observe(viewLifecycleOwner, Observer {
+            getUserData(it)
         })
-        viewModel.getUserImageReference().observe(viewLifecycleOwner, Observer {
-            getImageReference(viewModel.getUserImageReference().value)
+        viewModel.userImageReferenceLiveData.observe(viewLifecycleOwner, Observer {
+            getImageReference(it)
         })
 
         binding.editProfileButtonProfilePage.setOnClickListener(this)
@@ -104,7 +101,7 @@ class FragmentProfile : Fragment(), View.OnClickListener {
         }
     }
 
-    private fun getImageReference(imageReference: String?) {
+    private fun getImageReference(imageReference: Pair<String?,String?>) {
 
         val requestOptionsAvatar = RequestOptions()
             .placeholder(R.drawable.default_avatar)
@@ -112,7 +109,7 @@ class FragmentProfile : Fragment(), View.OnClickListener {
 
         Glide.with(binding.profilePageImage.context)
             .applyDefaultRequestOptions(requestOptionsAvatar)
-            .load(imageReference)
+            .load(imageReference.second)
             .circleCrop()
             .into(binding.profilePageImage)
     }

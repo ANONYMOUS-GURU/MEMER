@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.HomePageAdapter
 import com.example.memer.HELPERS.LoadingDialog
+import com.example.memer.HELPERS.MyUser
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelHomePagePost
 import com.example.memer.databinding.FragmentHomePageBinding
@@ -27,6 +28,11 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_home_page.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,View.OnClickListener {
@@ -56,9 +62,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,View.OnCl
             homePageAdapter.notifyDataSetChanged()
         })
 
-
         requireActivity().bottomNavigationView.visibility = View.VISIBLE
-
         return binding.root
     }
 
@@ -99,8 +103,20 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,View.OnCl
                 else -> false
             }
         }
-        when (mAuth.currentUser){
-            null -> navController.navigate(R.id.action_global_fragmentLogIn)
+        if(mAuth.currentUser == null){
+            navController.navigate(R.id.action_global_fragmentLogIn)
+            return
+        }
+
+        if(MyUser.getUser() == null){
+            loadingDialog.startLoadingDialog("Loading User Data ... ")
+            CoroutineScope(IO).launch {
+                MyUser.initializeUser()
+
+                withContext(Dispatchers.Main){
+                    loadingDialog.dismissDialog()
+                }
+            }
         }
     }
 
