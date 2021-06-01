@@ -2,22 +2,22 @@ package com.example.memer.ADAPTERS
 
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.example.memer.FRAGMENTS.FragmentYourPosts
+import com.example.memer.FRAGMENTS.*
 
-
-class AdapterFragmentProfile(fragment:Fragment): FragmentStateAdapter(fragment) {
+class AdapterFragmentAddPost(fragment: Fragment): FragmentStateAdapter(fragment) {
     companion object{
-        private const val TAG = "AdapterFragmentProfile"
+        private const val TAG = "AdapterFragmentAddPost"
     }
 
     override fun getItemCount(): Int {
-        return 1;
+        return 2;
     }
 
     override fun createFragment(position: Int): Fragment {
         return when (position){
-            0 -> FragmentYourPosts()
-            else -> FragmentYourPosts()
+            0 -> FragmentTemplates()
+            1 -> FragmentGallery()
+            else -> FragmentTemplates()
         }
     }
 }

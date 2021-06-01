@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:id="@+id/commentRootConstraintLaout">
 
     <ImageView
         android:id="@+id/userAvatarComment"
@@ -29,7 +29,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/userCommentCommentPage"
+        android:id="@+id/userCommentContent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -76,3 +76,5 @@
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+

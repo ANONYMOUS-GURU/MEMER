@@ -47,4 +47,12 @@
     <string name="comments">Comments</string>
     <string name="reply">Reply</string>
     <string name="time">time</string>
+    <string name="camera">Camera</string>
+    <string name="done">Done</string>
+    <string name="add_description">Add Description</string>
+    <string name="show_replies">Show Replies</string>
+    <string name="add_a_comment">Add a Comment</string>
+    <string name="replying_to_username">Replying To Username</string>
+    <string name="follow_user">Follow</string>
+    <string name="this_account_is_private">This Account Is Private</string>
 </resources>

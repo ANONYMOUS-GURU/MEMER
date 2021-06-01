@@ -9,7 +9,7 @@
         android:title="@string/search"
         android:icon="@drawable/search_icon"/>
     <item
-        android:id="@+id/fragmentAddPost"
+        android:id="@+id/navigationAddPost"
         android:title="@string/add"
         android:icon="@drawable/add_icon"/>
 

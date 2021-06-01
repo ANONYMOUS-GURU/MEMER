@@ -1,78 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:layout_margin="8dp">
 
-    <ImageView
-        android:id="@+id/userAvatarComment"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@tools:sample/avatars" />
-
-    <TextView
-        android:id="@+id/usernameComment"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="4dp"
-        android:textSize="12sp"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:text="@string/username"
-        app:layout_constraintStart_toEndOf="@+id/userAvatarComment"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/userCommentCommentPage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="4dp"
-        android:textSize="12sp"
-        android:textStyle="italic"
-        android:textColor="@color/black"
-        android:text="@string/comments"
-        app:layout_constraintStart_toEndOf="@+id/usernameComment"
-        app:layout_constraintTop_toTopOf="parent" />
+        <include
+            layout="@layout/single_comment_only_view"
+            android:id="@+id/commentRootView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
-    <TextView
-        android:id="@+id/replyComment"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="2dp"
-        android:text="@string/reply"
-        android:textSize="10sp"
-        app:layout_constraintStart_toEndOf="@+id/userAvatarComment"
-        app:layout_constraintTop_toBottomOf="@+id/usernameComment"
-        tools:ignore="SmallSp" />
+        <TextView
+            android:id="@+id/showComments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="8dp"
+            android:text="@string/show_replies"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/userAvatarComment" />
 
-    <TextView
-        android:id="@+id/timeComment"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/time"
-        android:layout_marginStart="8dp"
-        android:textSize="10sp"
-        app:layout_constraintStart_toEndOf="@+id/replyComment"
-        app:layout_constraintTop_toTopOf="@+id/replyComment"
-        tools:ignore="SmallSp" />
-
-    <ImageView
-        android:id="@+id/likeComment"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/like_icon_border" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/replyRecyclerView"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="8dp"
+            tools:itemCount="3"
+            tools:listitem="@layout/single_comment_only_view" />
 
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

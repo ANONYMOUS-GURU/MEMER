@@ -6,20 +6,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
+import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
-import com.example.memer.MODELS.PostContents
+import com.example.memer.MODELS.PostContents2
+import com.example.memer.MODELS.PostHomePage
 import com.example.memer.R
 import kotlinx.android.synthetic.main.single_meme_view.view.*
 
 class HomePageAdapter(private val itemClickListener: ItemClickListener, val mContext: Context) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-
-    private var items: List<PostContents> = ArrayList()
-
+    private var items: List<PostHomePage> = ArrayList()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return HomePageViewHolder(
@@ -42,9 +41,14 @@ class HomePageAdapter(private val itemClickListener: ItemClickListener, val mCon
         return items.size
     }
 
-    fun submitList(blogList: List<PostContents>?) {
-        if (blogList != null) {
-            items = blogList
+    fun getPost(position: Int) : PostHomePage{
+        return items[position]
+    }
+
+
+    fun submitList(postList: List<PostHomePage>?) {
+        if (postList != null) {
+            items = postList
         }
     }
 
@@ -68,8 +72,7 @@ class HomePageAdapter(private val itemClickListener: ItemClickListener, val mCon
             itemView.setOnClickListener(this)
         }
 
-
-        fun bind(postContents: PostContents) {
+        fun bind(postHomePage: PostHomePage) {
 
             val requestOptionsAvatar = RequestOptions()
                 .placeholder(R.drawable.default_avatar)
@@ -77,7 +80,7 @@ class HomePageAdapter(private val itemClickListener: ItemClickListener, val mCon
 
             Glide.with(itemView.context)
                 .applyDefaultRequestOptions(requestOptionsAvatar)
-                .load(postContents.userAvatar)
+                .load(postHomePage.userAvatarReference)
                 .circleCrop()
                 .into(userAvatar)
 
@@ -87,7 +90,7 @@ class HomePageAdapter(private val itemClickListener: ItemClickListener, val mCon
 
             Glide.with(itemView.context)
                 .applyDefaultRequestOptions(requestOptionsPost)
-                .load(postContents.mPost)
+                .load(postHomePage.postContents.postResource)
                 .into(imagePost)
 
             userAvatar.setOnClickListener(this)
@@ -100,20 +103,20 @@ class HomePageAdapter(private val itemClickListener: ItemClickListener, val mCon
             likesCount.setOnClickListener(this)
             commentsCount.setOnClickListener(this)
 
-            username.text = postContents.username
-            if (postContents.isBookMarked) {
-                bookmark.setImageResource(R.drawable.bookmark_filled_black)
-            } else {
-                bookmark.setImageResource(R.drawable.bookmark_border_black)
-            }
-            if (postContents.isLiked) {
-                likeOption.setImageResource(R.drawable.like_icon_filled)
-            } else {
-                likeOption.setImageResource(R.drawable.like_icon_border)
-            }
+            username.text = postHomePage.username
 
-//            likesCount.text = postContents.likesListReference.list.size()
-//            commentsCount.text = postContents.commentListReference.list.size()
+            if(postHomePage.likeCount > 0)
+                likeOption.setImageDrawable(getDrawable(mContext,R.drawable.like_icon_filled))
+            else
+                likeOption.setImageDrawable(getDrawable(mContext,R.drawable.like_icon_border))
+
+            if(postHomePage.isCommented)
+                addComment.setImageDrawable(getDrawable(mContext,R.drawable.default_avatar))
+            else
+                addComment.setImageDrawable(getDrawable(mContext,R.drawable.comment_icon))
+
+            likesCount.text = postHomePage.postContents.likeCount.toString()
+            commentsCount.text = postHomePage.postContents.commentCount.toString()
 
         }
 

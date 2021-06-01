@@ -16,8 +16,6 @@ class LoadingDialog(private val activity: Activity) {
         val inflater:LayoutInflater = activity.layoutInflater
         builder.setView(inflater.inflate(R.layout.loading_dialog,null))
 
-
-
         builder.setCancelable(false)
         dialog = builder.create()
         dialog.show()

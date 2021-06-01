@@ -8,45 +8,38 @@
     tools:context=".FRAGMENTS.FragmentAddPost">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/addPostToolbar"
+        android:id="@+id/updateProfilePicToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:elevation="4dp"
         android:minHeight="?attr/actionBarSize"
-        app:title="Add Post"
+        app:title="Upload"
         app:menu="@menu/add_post_menu" />
 
     <RelativeLayout
-        android:id="@+id/frameLayoutPostPreview"
+        android:id="@+id/updateProfilePicRelativeLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:orientation="vertical"
-        android:layout_weight="6">
+        android:layout_weight="11">
+
+        <com.theartofdev.edmodo.cropper.CropImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/updateProfilePicCropImage"
+            app:cropShape="oval"
+            />
 
     </RelativeLayout>
 
 
-    <ImageView
+    <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="6"
-        android:visibility="gone"
-        android:id="@+id/img1"/>
+        android:id="@+id/recyclerViewProfilePicGallery"
+        tools:listitem="@layout/gallery_item_view"
+        android:layout_weight="10"/>
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayoutAddPost"
-        android:layout_marginTop="8dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/fragmentContainerCreatePost" />
-
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPagerAddPost"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="4" />
 
 
 </LinearLayout>

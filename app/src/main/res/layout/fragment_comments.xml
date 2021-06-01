@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".FRAGMENTS.FragmentComments">
 
     <androidx.appcompat.widget.Toolbar
@@ -13,6 +12,7 @@
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
         android:elevation="4dp"
+        android:layout_alignParentTop="true"
         android:minHeight="?attr/actionBarSize">
 
         <TextView
@@ -29,9 +29,86 @@
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_above="@+id/commentComposeLinearLayout"
+        android:layout_below="@+id/commentPageToolbar"
         android:id="@+id/recyclerViewCommentsPage"
         android:layout_marginTop="8dp"
+        android:scrollbars="vertical"
         tools:listitem="@layout/comment_single_view"/>
 
 
-</LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/commentComposeLinearLayout"
+        android:layout_alignParentBottom="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:id="@+id/replyingToTextViewLinearLayout"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/replying_to_username"
+                android:id="@+id/replyingToTextView"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:background="@color/baby_blue"/>
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/close_icon"
+                android:id="@+id/closeReplyIcon"/>
+
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="4dp">
+
+            <ImageView
+                android:id="@+id/currentUserAvatar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                tools:src="@tools:sample/avatars" />
+
+            <EditText
+                android:id="@+id/userCommentEditText"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
+                android:inputType="textPersonName"
+                android:hint="@string/add_a_comment"
+                android:autofillHints="Comment"
+                android:elevation="16dp"
+                android:singleLine="false"/>
+
+            <ImageView
+                android:id="@+id/submitComment"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/message_icon" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+
+</RelativeLayout>

@@ -11,11 +11,12 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import com.example.memer.HELPERS.GLOBAL_INFORMATION
 import com.example.memer.HELPERS.LoadingDialog
-import com.example.memer.HELPERS.MyUser
+import com.example.memer.MODELS.UserData
 import com.example.memer.databinding.FragmentLogInBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -29,11 +30,7 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
 import com.example.memer.R
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.example.memer.VIEWMODELS.ViewModelUserInfo
 
 class FragmentLogIn : Fragment(), View.OnClickListener {
 
@@ -45,12 +42,10 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     private lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
     private lateinit var loadingDialog: LoadingDialog
     private lateinit var navController: NavController
+    private val viewModelLogin: ViewModelUserInfo by activityViewModels()
 
     companion object {
         private const val TAG = "FragmentLogIn"
-        private const val ACCESS_PHONE = "PHONE"
-        private const val ACCESS_FACEBOOK = "FACEBOOK"
-        private const val ACCESS_GOOGLE = "GOOGLE"
     }
 
     override fun onCreateView(
@@ -63,7 +58,7 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
         requireActivity().bottomNavigationView.visibility = View.GONE
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("512849101582-6795omk81mdutcq0v30olhgkqgsf1kd4.apps.googleusercontent.com")
+            .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
         mGoogleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
@@ -78,7 +73,7 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
                     " Phone Authentication Successful",
                     Toast.LENGTH_SHORT
                 ).show()
-                signInWithPhoneAuthCredential(credential)
+                viewModelLogin.signInWithPhoneAuthCredential(credential)
             }
 
             override fun onVerificationFailed(e: FirebaseException) {
@@ -134,6 +129,13 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)
+        viewModelLogin.userLD.observe(viewLifecycleOwner, {
+            if (it != null) {
+                Log.d(TAG, "onViewCreated: it not null")
+                updateUI(it, it.signInType)
+            } else
+                Log.d(TAG, "onViewCreated: it = null")
+        })
     }
 
     override fun onClick(v: View?) {
@@ -169,7 +171,6 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
         }
     }
 
-
     private fun validNumber(number: String): Boolean {
         var numeric = true
         try {
@@ -196,7 +197,7 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     private fun verifyPhoneNumberWithCode(verificationId: String?, code: String) {
         loadingDialog.startLoadingDialog("Signing you in ...")
         val credential = PhoneAuthProvider.getCredential(verificationId!!, code)
-        signInWithPhoneAuthCredential(credential)
+        viewModelLogin.signInWithPhoneAuthCredential(credential)
     }
 
     private fun resendVerificationCode(
@@ -212,28 +213,6 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
             optionsBuilder.setForceResendingToken(token) // callback's ForceResendingToken
         }
         PhoneAuthProvider.verifyPhoneNumber(optionsBuilder.build())
-    }
-
-    private fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
-        mAuth.signInWithCredential(credential).addOnCompleteListener(requireActivity()) { task ->
-            loadingDialog.dismissDialog()
-            if (task.isSuccessful) {
-                // Sign in success, update UI with the signed-in user's information
-                Log.d(TAG, "signInWithCredential:success")
-                val user = task.result?.user
-                updateUI(user, ACCESS_PHONE)
-            } else {
-                Log.w(TAG, "signInWithCredential:failure", task.exception)
-                if (task.exception is FirebaseAuthInvalidCredentialsException) {
-                    Toast.makeText(
-                        context,
-                        "Invalid Verification Code",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                updateUI(null, ACCESS_PHONE)
-            }
-        }
     }
 
 
@@ -260,7 +239,7 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
                     Log.d(TAG, "GoogleSignInSuccessful:" + account.id)
 
                     loadingDialog.changeText("Signing you in ... ")
-                    firebaseAuthWithGoogle(account.idToken!!)
+                    viewModelLogin.firebaseAuthWithGoogle(account.idToken!!)
                 } catch (e: ApiException) {
                     Log.w(TAG, "Google sign in failed", e)
                     Toast.makeText(context, "Google Sign In Failed", Toast.LENGTH_SHORT)
@@ -269,84 +248,16 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
             }
         }
 
-    private fun firebaseAuthWithGoogle(idToken: String) {
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        mAuth.signInWithCredential(credential)
-            .addOnCompleteListener(requireActivity()) { task ->
-                loadingDialog.changeText("Loading User ... ")
-                if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
-                    Log.d(TAG, "signInWithCredential:success")
-                    val user = mAuth.currentUser
 
-                    val isNewUser = task.result?.additionalUserInfo?.isNewUser == true
-
-                    CoroutineScope(IO).launch {
-                        if(user!=null){
-                            if(isNewUser)
-                                updateUserInfo(user)
-                            else {
-                                Log.d(TAG, "firebaseAuthWithGoogle: Start getting user data")
-                                MyUser.authenticateUser(user)
-                            }
-                        }
-
-                        withContext(Dispatchers.Main){
-                            updateUI(user, ACCESS_GOOGLE, isNewUser)
-                        }
-                    }
-                } else {
-                    // If sign in fails, display a message to the user.
-                    Log.w(TAG, "signInWithCredential:failure", task.exception)
-                    updateUI(null, ACCESS_GOOGLE)
-                }
-            }
-    }
-
-    private fun updateUI(user: FirebaseUser?, accessType: String, isNewUser: Boolean = false) {
+    private fun updateUI(user: UserData, accessType: String) {
         loadingDialog.dismissDialog()
-        when (user) {
-            null -> {
-                Toast.makeText(context, "$accessType Sign In Failed", Toast.LENGTH_SHORT).show()
-                binding.phoneNumberEditText.setText("")
-            }
-            else -> {
-                Toast.makeText(context, "Sign In With $accessType Successful", Toast.LENGTH_SHORT)
-                    .show()
-                when (isNewUser) {
-                    true -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentEditProfile)
-                    false -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentHomePage)
-                }
-            }
-        }
-
-    }
-
-    private suspend fun updateUserInfo(user:FirebaseUser?){
-        if (user != null) {
-            val name = user.displayName
-            if (name != null) {
-                MyUser.updateNewUser(
-                    MyUser.UserBasicInfo(
-                        userId = user.uid,
-                        nameOfUser = name,
-                        username = user.uid,
-                        signInType = ACCESS_GOOGLE,
-                        phoneNumber = null,
-                    )
-                )
-            } else {
-                MyUser.updateNewUser(
-                    MyUser.UserBasicInfo(
-                        userId = user.uid,
-                        nameOfUser = (user.uid.subSequence(0, 5)).toString(),
-                        username = user.uid,
-                        signInType = ACCESS_GOOGLE,
-                        phoneNumber = null,
-                    )
-                )
-            }
+        Toast.makeText(context, "Sign In With $accessType Successful", Toast.LENGTH_SHORT)
+            .show()
+        when (user.isNewUser) {
+            true -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentEditProfile)
+            false -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentHomePage)
         }
     }
+
 
 }

@@ -2,10 +2,10 @@ package com.example.memer.FRAGMENTS
 
 import android.os.Bundle
 import android.view.*
-import androidx.fragment.app.Fragment
+import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-
 import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
@@ -15,16 +15,20 @@ import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.memer.ADAPTERS.AdapterFragmentProfile
-import com.example.memer.MODELS.UserEditableInfo
-import com.example.memer.MODELS.UserNonEditInfo
+import com.example.memer.HELPERS.LoadingDialog
+import com.example.memer.MODELS.UserData
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentProfileBinding
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
+
 
 class FragmentProfile : Fragment(), View.OnClickListener {
 
@@ -32,6 +36,7 @@ class FragmentProfile : Fragment(), View.OnClickListener {
     private lateinit var mAuth: FirebaseAuth
     private lateinit var navController: NavController
     private val viewModel: ViewModelUserInfo by activityViewModels()
+    private lateinit var loadingDialog:LoadingDialog
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -39,19 +44,14 @@ class FragmentProfile : Fragment(), View.OnClickListener {
         binding = FragmentProfileBinding.inflate(inflater, container, false)
         requireActivity().bottomNavigationView.visibility = View.VISIBLE
 
+        loadingDialog = LoadingDialog(requireActivity())
+
         mAuth = Firebase.auth
 
-        viewModel.userEditLiveData.observe(viewLifecycleOwner, Observer {
-            getUserData(it)
-        })
-        viewModel.userNonEditInfoLiveData.observe(viewLifecycleOwner, Observer {
-            getUserData(it)
-        })
-        viewModel.userImageReferenceLiveData.observe(viewLifecycleOwner, Observer {
-            getImageReference(it)
-        })
+
 
         binding.editProfileButtonProfilePage.setOnClickListener(this)
+        binding.profilePageImage.setOnClickListener(this)
 
         val viewPager: ViewPager2 = binding.viewPagerProfilePage
         viewPager.adapter = AdapterFragmentProfile(this)
@@ -80,38 +80,26 @@ class FragmentProfile : Fragment(), View.OnClickListener {
         return binding.root
     }
 
-    private fun getUserData(user: UserEditableInfo?) {
+    private fun getUserData(user: UserData?) {
         if (user != null) {
             binding.apply {
                 bioProfilePage.text = user.bio
                 usernameProfilePage.text = user.username
                 nameOfUserProfilePage.text = user.nameOfUser
+                profileFollowingCount.text = user.userFollowersCount.toString()
+                profileFollowersCount.text = user.userFollowersCount.toString()
+                profilePostCount.text = user.userPostCount.toString()
             }
+            val requestOptionsAvatar = RequestOptions()
+                .placeholder(R.drawable.default_avatar)
+                .error(R.drawable.default_avatar)
+
+            Glide.with(binding.profilePageImage.context)
+                .applyDefaultRequestOptions(requestOptionsAvatar)
+                .load(user.userAvatarReference)
+                .circleCrop()
+                .into(binding.profilePageImage)
         }
-
-    }
-
-    private fun getUserData(user: UserNonEditInfo?) {
-        if (user != null) {
-            binding.apply {
-                profileFollowingCount.text = user.followingCount.toString()
-                profileFollowersCount.text = user.followersCount.toString()
-                profilePostCount.text = user.postCount.toString()
-            }
-        }
-    }
-
-    private fun getImageReference(imageReference: Pair<String?,String?>) {
-
-        val requestOptionsAvatar = RequestOptions()
-            .placeholder(R.drawable.default_avatar)
-            .error(R.drawable.default_avatar)
-
-        Glide.with(binding.profilePageImage.context)
-            .applyDefaultRequestOptions(requestOptionsAvatar)
-            .load(imageReference.second)
-            .circleCrop()
-            .into(binding.profilePageImage)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -126,19 +114,44 @@ class FragmentProfile : Fragment(), View.OnClickListener {
                     true
                 }
                 R.id.fragmentLogIn -> {
-                    mAuth.signOut()
-                    navController.navigate(R.id.action_global_fragmentLogIn)
+                    signOut()
                     true
                 }
                 else -> false
             }
         }
+        viewModel.userLD.observe(viewLifecycleOwner, Observer {
+            getUserData(it)
+        })
+        getUserData(viewModel.userLD.value)
     }
 
+    private fun signOut() {
+        loadingDialog.startLoadingDialog("Signing Out ... ")
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        val mGoogleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
+        mGoogleSignInClient.signOut().addOnCompleteListener {
+            if(it.isSuccessful){
+                mAuth.signOut()
+                FirebaseFirestore.getInstance().clearPersistence()
+                Toast.makeText(context,"Successfully signed out",Toast.LENGTH_SHORT).show()
+                navController.navigate(R.id.action_global_fragmentLogIn)
+                viewModel.signOut()
+            }
+            else{
+                Toast.makeText(context,"Error Logging Out",Toast.LENGTH_SHORT).show()
+            }
+            loadingDialog.dismissDialog()
+        }
+    }
     override fun onClick(v: View?) {
         if (v != null) {
             when (v.id) {
                 R.id.editProfileButtonProfilePage -> navController.navigate(R.id.action_fragmentProfile_to_fragmentEditProfile)
+                binding.profilePageImage.id -> navController.navigate(R.id.action_fragmentProfile_to_fragmentProfilePic)
             }
         }
     }

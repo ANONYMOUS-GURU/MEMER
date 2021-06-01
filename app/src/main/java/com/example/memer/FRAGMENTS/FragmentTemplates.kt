@@ -8,40 +8,42 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
-import com.example.memer.ADAPTERS.AdapterFragmentTaggedPosts
-import com.example.memer.HELPERS.DataSource
-import com.example.memer.databinding.FragmentTaggedPostsBinding
+import com.example.memer.ADAPTERS.AdapterGallery
+import com.example.memer.ADAPTERS.AdapterTemplates
+import com.example.memer.R
+import com.example.memer.databinding.FragmentTemplatesBinding
 
 
-class FragmentTaggedPosts : Fragment(), AdapterFragmentTaggedPosts.ItemClickListener {
+class FragmentTemplates : Fragment() , AdapterTemplates.ItemClickListener {
 
-    private lateinit var binding: FragmentTaggedPostsBinding
+    private lateinit var binding:FragmentTemplatesBinding
     private lateinit var gridLayoutManager: GridLayoutManager
-    private lateinit var mAdapter: AdapterFragmentTaggedPosts
+    private lateinit var mAdapter: AdapterTemplates
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentTaggedPostsBinding.inflate(inflater,container,false)
+        binding = FragmentTemplatesBinding.inflate(inflater,container,false)
+        initRecyclerView()
 
+        return binding.root
+    }
+    private fun initRecyclerView(){
         gridLayoutManager = GridLayoutManager(context,4)
-        mAdapter = AdapterFragmentTaggedPosts(this, requireActivity())
-        mAdapter.submitList(DataSource.createOnlyImageSet())
-        val recyclerView =binding.recyclerViewFragmentTaggedPosts
+        mAdapter = AdapterTemplates(this, requireActivity())
+        mAdapter.submitList(ArrayList())
+        val recyclerView =binding.recyclerViewTemplates
 
         recyclerView.apply {
             layoutManager = gridLayoutManager
             itemAnimator = DefaultItemAnimator()
             adapter = mAdapter
         }
-
-        return binding.root
     }
 
     override fun onItemClick(position: Int) {
-        Toast.makeText(context,"Clicked Tagged Posts at $position", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context,"Clicked Your Posts at $position", Toast.LENGTH_SHORT).show()
     }
-
 
 }
