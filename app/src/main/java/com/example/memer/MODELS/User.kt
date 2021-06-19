@@ -4,6 +4,7 @@ import android.os.Parcelable
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.ServerTimestamp
+import com.google.firebase.firestore.auth.User
 import kotlinx.android.parcel.Parcelize
 import java.lang.reflect.Array.getInt
 import java.util.*
@@ -20,8 +21,6 @@ data class UserData(
     val userPostCount : Long,
     val userFollowersCount:Long,
     val userFollowingCount:Long,
-    val userBookMarks: ArrayList<String> = ArrayList(),
-    val userReports: ArrayList<String> = ArrayList(),
     var userAvatarReference: String? = null,
     @Exclude @set:Exclude @get:Exclude var isAuthenticated: Boolean = false,
     @Exclude @set:Exclude @get:Exclude var isNewUser: Boolean = true,
@@ -41,9 +40,7 @@ data class UserData(
                 get("userPostCount") as Long,
                 get("userFollowersCount") as Long,
                 get("userFollowingCount") as Long,
-                get("userBookMarks") as ArrayList<String>,
-                get("userReports") as ArrayList<String>,
-                getString("userAvatarReference"),
+                getString("userAvatarReference")
             )
         }
         fun UserBasicInfo.toUserData(): UserData {
@@ -58,8 +55,6 @@ data class UserData(
                 userPostCount = 0,
                 userFollowersCount = 0,
                 userFollowingCount = 0,
-                userBookMarks = ArrayList(),
-                userReports = ArrayList(),
                 userAvatarReference = null
             )
         }
@@ -74,31 +69,53 @@ data class UserBasicInfo(
     val phoneNumber: String?
 )
 
-data class UserNonEditInfo(
-    var followersCount: Long = 0,
-    var followingCount: Long = 0,
-    var postCount: Long = 0
-)
-
-data class UserEditableInfo(
-    var nameOfUser:String = "Name of User",
-    var username:String = "$$$",   // A placeholder for no username
-    var bio:String = ""
-)
-
 data class UserProfileInfo(
     var nameOfUser:String,
     var username:String,
-    var postCount:Int,
+    var postCount:Long,
     var userId:String?,
     var followersCount:Long,
     var followingCount:Long,
     var bio:String,
-    var imageUserReference:String
-)
+    var userAvatarReference:String?
+){
+    companion object {
+        fun UserData.toUserProfileInfo():UserProfileInfo{
+            return UserProfileInfo(nameOfUser,username,userPostCount,userId,
+                userFollowersCount,userFollowingCount,bio,userAvatarReference)
+        }
 
-data class UserDisplayInfo(
-    val username : String,
-    val userAvatarReference:String?,
-    val userId : String
-)
+        fun DocumentSnapshot.toUserProfileInfo():UserProfileInfo{
+            return UserProfileInfo(
+                getString("nameOfUser")!!,
+                getString("username")!!,
+                getLong("postCount")!!,
+                getString("userId")!!,
+                getLong("followersCount")!!,
+                getLong("followingCount")!!,
+                getString("bio")!!,
+                getString("userAvatarReference"),
+            )
+        }
+    }
+}
+
+data class LikedBy(
+    val username:String,
+    val userAvatarReference: String?,
+    val nameOfUser:String,
+    val userId:String,
+    var isFollowing:Boolean = false
+){
+    companion object{
+        fun DocumentSnapshot.toLikedBy():LikedBy?{
+            return LikedBy(
+                getString("username")!!,
+                getString("userAvatarReference"),
+                getString("nameOfUser")!!,
+                getString("userId")!!
+            )
+        }
+    }
+}
+

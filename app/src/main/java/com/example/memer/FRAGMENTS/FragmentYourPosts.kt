@@ -54,7 +54,6 @@ class FragmentYourPosts : Fragment(), AdapterFragmentYourPosts.ItemClickListener
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModelUserPost.postsLiveData.observe(viewLifecycleOwner, {
-            Log.d(TAG, "init block: observe ${it.size}")
             mAdapter.submitList(it)
             mAdapter.notifyDataSetChanged()
         })

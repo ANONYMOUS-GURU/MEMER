@@ -15,7 +15,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.memer.MODELS.UserData
-import com.example.memer.MODELS.UserEditableInfo
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentEditProfileBinding
@@ -76,8 +75,6 @@ class FragmentEditProfile : Fragment(), View.OnClickListener {
         else
             binding.editProfilePageToolbar.setupWithNavController(navController)
 
-
-
         viewModel.userLD.observe(viewLifecycleOwner, {
             getUserData(it)
         })
@@ -88,18 +85,15 @@ class FragmentEditProfile : Fragment(), View.OnClickListener {
             when (it.itemId) {
                 R.id.confirmEditProfile -> {
                     saveChanges()
-                    if(viewModel.userLD.value !! .isNewUser)
-                        navController.navigate(R.id.action_fragmentEditProfile_to_fragmentProfile)
-                    else
-                        navController.navigateUp()
+                    navController.navigateUp()
                     true
                 }
                 else -> false
             }
         }
         // TODO("Override navigateUp instead of using the hack of removing the button altogether")
-        if(! viewModel.userLD.value !! .isNewUser)
-            binding.editProfilePageToolbar.setNavigationIcon(R.drawable.close_icon)
+//        if(! viewModel.userLD.value !! .isNewUser)
+//            binding.editProfilePageToolbar.setNavigationIcon(R.drawable.close_icon)
     }
 
     private fun setImageResource(value: Pair<String?,String?>) {
@@ -113,8 +107,7 @@ class FragmentEditProfile : Fragment(), View.OnClickListener {
             viewModel.userLD.value !! .userId,username,name,viewModel.userLD.value !!.signInType,
             viewModel.userLD.value!!.phoneNumber,bio,viewModel.userLD.value!!.userProfilePicReference,
             viewModel.userLD.value!!.userPostCount,viewModel.userLD.value!!.userFollowersCount,
-            viewModel.userLD.value!!.userFollowingCount,viewModel.userLD.value!!.userBookMarks,
-            viewModel.userLD.value!!.userReports,viewModel.userLD.value!!.userAvatarReference,
+            viewModel.userLD.value!!.userFollowingCount,viewModel.userLD.value!!.userAvatarReference,
             viewModel.userLD.value!!.isAuthenticated,viewModel.userLD.value!!.isNewUser
         )
 

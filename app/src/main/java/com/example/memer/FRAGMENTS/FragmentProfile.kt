@@ -48,8 +48,6 @@ class FragmentProfile : Fragment(), View.OnClickListener {
 
         mAuth = Firebase.auth
 
-
-
         binding.editProfileButtonProfilePage.setOnClickListener(this)
         binding.profilePageImage.setOnClickListener(this)
 
@@ -64,11 +62,11 @@ class FragmentProfile : Fragment(), View.OnClickListener {
                     tab.icon =
                         ContextCompat.getDrawable(requireActivity(), R.drawable.default_avatar)
                 }
-                1 -> {
-//                    tab.text = "Tagged Posts"
-                    tab.icon =
-                        ContextCompat.getDrawable(requireActivity(), R.drawable.default_avatar)
-                }
+//                1 -> {
+////                    tab.text = "Tagged Posts"
+//                    tab.icon =
+//                        ContextCompat.getDrawable(requireActivity(), R.drawable.default_avatar)
+//                }
                 else -> {
 //                    tab.text = "Your Posts"
                     tab.icon =
@@ -80,6 +78,53 @@ class FragmentProfile : Fragment(), View.OnClickListener {
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        navController = Navigation.findNavController(view)
+        val appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentProfile))
+        binding.profilePageToolbar.setupWithNavController(navController, appBarConfiguration)
+        binding.profilePageToolbar.setOnMenuItemClickListener {
+            when (it.itemId) {
+                R.id.signOut -> {
+                    signOut()
+                    true
+                }
+                else -> false
+            }
+        }
+        viewModel.userLD.observe(viewLifecycleOwner, Observer {
+            getUserData(it)
+        })
+        getUserData(viewModel.userLD.value)
+    }
+    override fun onClick(v: View?) {
+        if (v != null) {
+            when (v.id) {
+                R.id.editProfileButtonProfilePage -> navController.navigate(R.id.action_fragmentProfile_to_fragmentEditProfile)
+                binding.profilePageImage.id -> navController.navigate(R.id.action_fragmentProfile_to_fragmentProfilePic)
+            }
+        }
+    }
+
+    private fun signOut() {
+        loadingDialog.startLoadingDialog("Signing Out ... ")
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        val mGoogleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
+        mGoogleSignInClient.signOut().addOnCompleteListener {
+            if(it.isSuccessful){
+                viewModel.signOut()
+                Toast.makeText(context,"Successfully signed out",Toast.LENGTH_SHORT).show()
+                navController.navigate(R.id.action_global_fragmentLogIn)
+            }
+            else{
+                Toast.makeText(context,"Error Logging Out",Toast.LENGTH_SHORT).show()
+            }
+            loadingDialog.dismissDialog()
+        }
+    }
     private fun getUserData(user: UserData?) {
         if (user != null) {
             binding.apply {
@@ -99,60 +144,6 @@ class FragmentProfile : Fragment(), View.OnClickListener {
                 .load(user.userAvatarReference)
                 .circleCrop()
                 .into(binding.profilePageImage)
-        }
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        navController = Navigation.findNavController(view)
-        val appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentProfile))
-        binding.profilePageToolbar.setupWithNavController(navController, appBarConfiguration)
-        binding.profilePageToolbar.setOnMenuItemClickListener {
-            when (it.itemId) {
-                R.id.fragmentAddPost -> {
-                    navController.navigate(R.id.action_fragmentProfile_to_fragmentAddPost)
-                    true
-                }
-                R.id.fragmentLogIn -> {
-                    signOut()
-                    true
-                }
-                else -> false
-            }
-        }
-        viewModel.userLD.observe(viewLifecycleOwner, Observer {
-            getUserData(it)
-        })
-        getUserData(viewModel.userLD.value)
-    }
-
-    private fun signOut() {
-        loadingDialog.startLoadingDialog("Signing Out ... ")
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id))
-            .requestEmail()
-            .build()
-        val mGoogleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
-        mGoogleSignInClient.signOut().addOnCompleteListener {
-            if(it.isSuccessful){
-                mAuth.signOut()
-                FirebaseFirestore.getInstance().clearPersistence()
-                Toast.makeText(context,"Successfully signed out",Toast.LENGTH_SHORT).show()
-                navController.navigate(R.id.action_global_fragmentLogIn)
-                viewModel.signOut()
-            }
-            else{
-                Toast.makeText(context,"Error Logging Out",Toast.LENGTH_SHORT).show()
-            }
-            loadingDialog.dismissDialog()
-        }
-    }
-    override fun onClick(v: View?) {
-        if (v != null) {
-            when (v.id) {
-                R.id.editProfileButtonProfilePage -> navController.navigate(R.id.action_fragmentProfile_to_fragmentEditProfile)
-                binding.profilePageImage.id -> navController.navigate(R.id.action_fragmentProfile_to_fragmentProfilePic)
-            }
         }
     }
 

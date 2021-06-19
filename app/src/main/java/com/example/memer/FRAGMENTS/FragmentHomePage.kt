@@ -18,12 +18,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.HomePageAdapter
 import com.example.memer.HELPERS.LoadingDialog
+import com.example.memer.NavGraphDirections
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelHomePagePost
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentHomePageBinding
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.CoroutineScope
@@ -44,8 +49,8 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
     private val viewModelHomePage: ViewModelHomePagePost by viewModels()
     private val viewModelUser: ViewModelUserInfo by activityViewModels()
 
-    private val maxLikeLimit = 1
-    private val minLikeLimit = 0
+    private lateinit var onCompleteListener: OnCompleteListener<QuerySnapshot>
+    private lateinit var onFailureListener: OnFailureListener
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,6 +60,18 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
         // Inflate the layout for this fragment
         binding = FragmentHomePageBinding.inflate(inflater, container, false)
         loadingDialog = LoadingDialog(requireActivity())
+
+        onCompleteListener = OnCompleteListener<QuerySnapshot> { task ->
+            if (task.isSuccessful) {
+                Toast.makeText(context, "Loaded Data", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Could Not Fetch Data", Toast.LENGTH_SHORT).show()
+            }
+        }
+        onFailureListener = OnFailureListener {
+            Toast.makeText(context, "Failed ", Toast.LENGTH_SHORT).show()
+        }
+
         mAuth = Firebase.auth
         initRecyclerView()
         requireActivity().bottomNavigationView.visibility = View.VISIBLE
@@ -74,7 +91,11 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
                     if (viewModelHomePage.moreDataPresent && !recyclerView.canScrollVertically(1) && newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        viewModelHomePage.getMoreData(viewModelUser.userLD.value!!.userId)
+                        viewModelHomePage.getMoreData(
+                            viewModelUser.userLD.value!!.userId,
+                            onCompleteListener,
+                            onFailureListener
+                        )
                     }
                 }
             })
@@ -85,10 +106,12 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
 
         if (mAuth.currentUser == null) {
             navController.navigate(R.id.action_global_fragmentLogIn)
+            Log.d(TAG, "initializeViewModel: No User Found")
             return false
         }
 
         if (viewModelUser.userLD.value == null) {
+            Log.d(TAG, "initializeViewModel: User Found Fetching Data")
             loadingDialog.startLoadingDialog("Loading User Data ... ")
             CoroutineScope(IO).launch {
                 viewModelUser.initializeUser()
@@ -99,6 +122,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
                 }
             }
         } else {
+            Log.d(TAG, "initializeViewModel: Already Present Loading")
             initData()
         }
         return true
@@ -119,24 +143,31 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
             }
         }
 
-        if (!initializeViewModel())
-            return
+        initializeViewModel()
 
 
     }
 
     private fun initData() {
+
+
         viewModelHomePage.postLD.observe(viewLifecycleOwner, {
             Log.d(TAG, "onCreateView: ${it.size}")
             homePageAdapter.submitList(it)
             homePageAdapter.notifyDataSetChanged()
         })
-        viewModelHomePage.getData(viewModelUser.userLD.value!!.userId)
+        viewModelHomePage.getData(
+            viewModelUser.userLD.value!!.userId,
+            onCompleteListener,
+            onFailureListener
+        )
     }
 
     override fun onImageItemClick(position: Int) {
         Toast.makeText(activity, "Clicked on image at position $position", Toast.LENGTH_SHORT)
             .show()
+        val action = NavGraphDirections.actionGlobalFragmentLikes(homePageAdapter.getPost(position).postContents)
+        navController.navigate(action)
     }
 
     override fun onVideoItemClick(position: Int) {
@@ -146,39 +177,46 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
 
     override fun onLikeClick(position: Int) {
         Log.d("FragmentHomePage", "onLikeClick $position")
-        if (homePageAdapter.getPost(position).likeCount == 0L)
-            viewModelHomePage.likeClicked(
-                position,
-                homePageAdapter.getPost(position).postContents.postId,
-                viewModelUser.userLD.value!!.userId,
-                homePageAdapter.getPost(position).postContents.postOwnerId,
-                true
-            )
-        else{
-            viewModelHomePage.likeClicked(
-                position,
-                homePageAdapter.getPost(position).postContents.postId,
-                viewModelUser.userLD.value!!.userId,
-                homePageAdapter.getPost(position).postContents.postOwnerId,
-                false
-            )
-        }
+
+        viewModelHomePage.likeClicked(
+            position,
+            homePageAdapter.getPost(position).postContents.postId,
+            viewModelUser.userLD.value!!.userId,
+            viewModelUser.userLD.value!!.username,
+            viewModelUser.userLD.value!!.userAvatarReference,
+            viewModelUser.userLD.value!!.nameOfUser,
+            homePageAdapter.getPost(position).postContents.postOwnerId,
+            homePageAdapter.getPost(position).isLiked == 0L
+        )
+
     }
 
 
     override fun onCommentClick(position: Int) {
-        val action  = FragmentHomePageDirections.actionFragmentHomePageToFragmentComments(homePageAdapter.getPost(position).postContents)
+        val action =
+            NavGraphDirections.actionGlobalFragmentComments(homePageAdapter.getPost(position).postContents)
         navController.navigate(action)
     }
 
     override fun onBookMarkClick(position: Int) {
-        Log.d("FragmentHomePage", "onBookMarkClick $position")
-//        viewModelHomePage.bookMarkClicked(position)
+        Log.d(TAG, "onBookMarkClick $position")
+        viewModelHomePage.bookMarkClicked(
+            position, viewModelUser.userLD.value!!.userId,
+            homePageAdapter.getPost(position).postContents.postId,
+            homePageAdapter.getPost(position).postContents.postOwnerId
+        )
     }
 
     override fun onUserClick(position: Int) {
         // Should add to Relation User if POST_USER != USER
-        navController.navigate(R.id.action_fragmentHomePage_to_fragmentRandomUserProfile)
+        if (homePageAdapter.getPost(position).postContents.postOwnerId == viewModelUser.userLD.value!!.userId) {
+            navController.navigate(R.id.action_global_fragmentProfile)
+        } else {
+            val action = NavGraphDirections.actionGlobalFragmentRandomUserProfile(
+                homePageAdapter.getPost(position).postContents.postOwnerId
+            )
+            navController.navigate(action)
+        }
     }
 
     override fun onMenuClick(position: Int) {

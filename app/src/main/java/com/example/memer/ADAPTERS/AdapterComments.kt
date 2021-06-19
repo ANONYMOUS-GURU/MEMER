@@ -52,8 +52,11 @@ class AdapterComments(
     fun submitList(commentList: ArrayList<Pair<Comment,ArrayList<Comment>>>) {
         items = commentList
     }
-    fun getUserId(position: Int):String{
-        return items[position].first.commentOwnerId
+    fun getUserId(position: Int,parentPosition:Int = -1):String{
+        if(parentPosition == -1)
+            return items[position].first.commentOwnerId
+        else
+            return items[parentPosition].second[position].commentOwnerId
     }
     fun getUsername(position: Int):String{
         return items[position].first.commentOwnerUsername

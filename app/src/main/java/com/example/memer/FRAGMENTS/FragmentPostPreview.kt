@@ -52,7 +52,7 @@ class FragmentPostPreview : Fragment(), View.OnClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment)
+        navController = Navigation.findNavController(view)
         loadingDialog = LoadingDialog(requireActivity())
         binding.previewPostToolbar.setupWithNavController(navController)
     }
@@ -120,7 +120,7 @@ class FragmentPostPreview : Fragment(), View.OnClickListener {
     private fun writePostToDb(uri: Uri, postDesc: String) {
 
         val postId = viewModelUser.userLD.value !! . userId + (System.currentTimeMillis() / 1000).toString()
-        val task = PostDb.addPost(uri.toString(), viewModelUser.userLD.value !! . userId, postDesc, postId)
+        val task = PostDb.addPost(uri.toString(), viewModelUser.userLD.value !! . userId, viewModelUser.userLD.value !! . username, viewModelUser.userLD.value !! . userAvatarReference, postDesc, postId)
         task
             .addOnSuccessListener {
                 CoroutineScope(Dispatchers.IO).launch {

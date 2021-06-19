@@ -11,11 +11,14 @@ data class Comment(
     val commentId:String,
     val commentContent:String,
     val commentParentId:String?,
+
     val commentOwnerId:String,
     val commentOwnerUsername:String,
     val commentOwnerUserAvatar:String?,
+
+    val commentPostOwnerId:String,
     val commentPostId:String,
-    val commentReplyCount:Long = 0,
+    var commentReplyCount:Long = 0,
     @ServerTimestamp
     val time : Date? = null
 //    val commentLikeCount:Long
@@ -29,6 +32,7 @@ data class Comment(
                 getString("commentOwnerId") !! ,
                 getString("commentOwnerUsername") !! ,
                 getString("commentOwnerUserAvatar") ,
+                getString("commentPostOwnerId") !!,
                 getString("commentPostId") !!,
                 getLong("commentReplyCount") !!
             )

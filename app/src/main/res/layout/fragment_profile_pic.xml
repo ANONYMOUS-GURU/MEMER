@@ -11,6 +11,7 @@
         android:id="@+id/updateProfilePicToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/teal_200"
         android:elevation="4dp"
         android:minHeight="?attr/actionBarSize"
         app:title="Upload"

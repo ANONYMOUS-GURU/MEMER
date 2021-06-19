@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation_profile"
+    app:startDestination="@id/fragmentProfile">
+    <fragment
+        android:id="@+id/fragmentEditProfile"
+        android:name="com.example.memer.FRAGMENTS.FragmentEditProfile"
+        tools:layout="@layout/fragment_edit_profile">
+        <action
+            android:id="@+id/action_fragmentEditProfile_to_fragmentProfilePic"
+            app:destination="@id/fragmentProfilePic" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentProfilePic"
+        android:name="com.example.memer.FRAGMENTS.FragmentProfilePic" />
+    <fragment
+        android:id="@+id/fragmentProfile"
+        android:name="com.example.memer.FRAGMENTS.FragmentProfile"
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_fragmentProfile_to_fragmentEditProfile"
+            app:destination="@id/fragmentEditProfile" />
+        <action
+            android:id="@+id/action_fragmentProfile_to_fragmentProfilePic"
+            app:destination="@id/fragmentProfilePic" />
+    </fragment>
+</navigation>

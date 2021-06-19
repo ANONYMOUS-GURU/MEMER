@@ -11,7 +11,7 @@
         android:id="@+id/randomProfilePageToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/teal_200"
         android:elevation="4dp"
         android:minHeight="?attr/actionBarSize">
 
@@ -27,8 +27,7 @@
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/gradient_gray">
+        android:layout_height="match_parent">
 
 
         <LinearLayout
@@ -163,7 +162,6 @@
                     android:layout_marginTop="24dp"
                     android:text="@string/follow_user"
                     android:textAllCaps="false"
-                    android:textColor="@color/black"
                     android:textSize="12sp" />
 
                 <com.google.android.material.button.MaterialButton
@@ -175,7 +173,6 @@
                     android:text="@string/message"
                     android:layout_marginHorizontal="8dp"
                     android:textAllCaps="false"
-                    android:textColor="@color/black"
                     android:textSize="12sp" />
 
             </LinearLayout>
@@ -186,6 +183,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginTop="48dp"
+                android:visibility="gone"
                 android:id="@+id/randomUserAccountPrivateLayout">
 
                 <TextView

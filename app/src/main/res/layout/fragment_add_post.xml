@@ -12,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:elevation="4dp"
+        android:background="@color/teal_200"
         android:minHeight="?attr/actionBarSize"
         app:title="Add Post"
         app:menu="@menu/add_post_menu" />
@@ -20,18 +21,8 @@
         android:id="@+id/frameLayoutPostPreview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:orientation="vertical"
-        android:layout_weight="6">
+        android:layout_weight="5"/>
 
-    </RelativeLayout>
-
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="6"
-        android:visibility="gone"
-        android:id="@+id/img1"/>
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutAddPost"

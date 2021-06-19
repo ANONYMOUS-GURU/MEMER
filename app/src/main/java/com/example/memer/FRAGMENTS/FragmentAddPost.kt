@@ -1,9 +1,10 @@
 package com.example.memer.FRAGMENTS
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.Bitmap.CompressFormat
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
@@ -16,7 +17,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,32 +29,36 @@ import androidx.navigation.navGraphViewModels
 import androidx.navigation.ui.setupWithNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.example.memer.ADAPTERS.AdapterFragmentAddPost
+import com.example.memer.MODELS.BitmapModel
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelCreatePost
 import com.example.memer.databinding.FragmentAddPostBinding
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.math.sqrt
 
 
-class FragmentAddPost : Fragment() , View.OnTouchListener {
+class FragmentAddPost : Fragment(), View.OnTouchListener {
 
     private lateinit var binding: FragmentAddPostBinding
     private lateinit var currentPhotoPath: String
     private lateinit var uri: Uri
-    private lateinit var navController : NavController
+    private lateinit var navController: NavController
 
-    private val viewModel:ViewModelCreatePost by navGraphViewModels(R.id.navigationAddPost)
+    private var photoMap = HashMap<Int, BitmapModel>()
+
+    private val viewModel: ViewModelCreatePost by navGraphViewModels(R.id.navigationAddPost)
 
     private var MODE = NONE
     private var oldDist = 1f;
     private var d = 0f;
     private var newRot = 0f;
-    private  var scalediff:Float = 0f;
+    private var scalediff: Float = 0f;
     private var viewTouched = -1
 
     override fun onCreateView(
@@ -62,20 +66,36 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding= FragmentAddPostBinding.inflate(inflater, container, false)
-        requireActivity().bottomNavigationView.visibility = View.GONE
-
-        viewModel.allBitmapLD.observe(viewLifecycleOwner, {
-            updateImageViews(it)
-        })
-
+        Log.d(TAG, "onCreateView: ")
+        binding = FragmentAddPostBinding.inflate(inflater, container, false)
 
         initViews()
 
         return binding.root
     }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        /* Initialized here to Prevent it from being fired when re-appears from popBackStack. It
+         will run only when the LD is changed and not every time it comes back from the back Stack
+         Also NOTE ""this"" is used here as the lifeCycleOwner instead of viewLifeCycleOwner as it
+         can be used only between onViewCreated and onDestroyView*/
+
+
+        Log.d(TAG, "onCreate: ")
+        viewModel.croppedBitmapLD.observe(this, {
+            Log.d(TAG, "onCreate: fired")
+            addImageViews(it)
+        })
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        Log.d(TAG, "onViewCreated: ")
+
+
+
         navController = Navigation.findNavController(view)
         binding.addPostToolbar.setupWithNavController(navController)
         binding.addPostToolbar.setOnMenuItemClickListener {
@@ -120,7 +140,7 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
         }.attach()
     }
 
-    private fun launchCamera(){
+    private fun launchCamera() {
         if (ContextCompat.checkSelfPermission(
                 requireContext(), Manifest.permission.CAMERA
             ) ==
@@ -133,6 +153,7 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
             )
         }
     }
+
     private fun dispatchTakePictureIntent() {
         uri = FileProvider.getUriForFile(
             requireContext(),
@@ -141,6 +162,7 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
         )
         getCameraImageLauncher.launch(uri)
     }
+
     private fun createImageFile(): File {
         val timeStamp: String = SimpleDateFormat.getDateTimeInstance().format(Date())
         val storageDir: File =
@@ -150,14 +172,17 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
             currentPhotoPath = absolutePath
         }
     }
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
             if (isGranted) {
                 dispatchTakePictureIntent()
             } else {
                 Toast.makeText(context, "Allow Permission For ACCESS", Toast.LENGTH_LONG).show()
             }
         }
-    private val getCameraImageLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) {
+    private val getCameraImageLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) {
             if (it) {
                 Log.i(TAG, "Got image at: $")
                 Toast.makeText(context, "Got Image $uri", Toast.LENGTH_SHORT).show()
@@ -166,25 +191,39 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
             }
         }
 
-    companion object{
+    companion object {
         private const val TAG = "FragmentAddPost"
         private const val NONE = 0;
         private const val DRAG = 1;
         private const val ZOOM = 2;
     }
 
-    private fun cropImage(_uri: Uri){
+    private fun cropImage(_uri: Uri) {
         viewModel.uriData = _uri
         navController.navigate(R.id.action_fragmentAddPost_to_fragmentCrop)
     }
-    private fun updateImageViews(bitmap: Bitmap) {
+
+    private fun addImageViews(bitmap: Bitmap) {
         val imgView = ImageView(context)
-//        val lp = Relative.LayoutParams(Relative.LayoutParams.WRAP_CONTENT, Relative.LayoutParams.WRAP_CONTENT)
-        val lp = RelativeLayout.LayoutParams(500, 500)
+        val lp = RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.WRAP_CONTENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        lp.leftMargin = 0
+        lp.topMargin = 0
+        lp.rightMargin = binding.frameLayoutPostPreview.width - imgView.width
+        lp.bottomMargin = binding.frameLayoutPostPreview.height - imgView.height
+
         imgView.layoutParams = lp
         imgView.id = View.generateViewId()
         imgView.adjustViewBounds = true
         imgView.setImageBitmap(bitmap)    // TODO(set with glide)
+
+        imgView.minimumWidth = 50
+        imgView.minimumHeight = 50
+
+        imgView.scaleType = ImageView.ScaleType.CENTER_CROP
 
 //        Glide.with(requireContext())
 //                .load(uri)
@@ -192,18 +231,25 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
 
         imgView.setOnTouchListener(this)
         binding.frameLayoutPostPreview.addView(imgView)
-    }
-    private fun updateImageViews(uriData: List<Bitmap>){
-        uriData.forEach {
-            updateImageViews(it)
-        }
-    }
+        photoMap[imgView.id] = BitmapModel(
+            imgView.id,
+            bitmap,
+            lp.leftMargin,
+            lp.topMargin,
+            lp.rightMargin,
+            lp.bottomMargin,
+            0f,
+            1f
+        )
 
+//        Log.d(TAG, "updateImageViews: Adding")
+
+    }
 
     /*
      CREDITS - https://github.com/lau1944/Zoom-Drag-Rotate-ImageView
      */
-    var parms: RelativeLayout.LayoutParams? = null
+    lateinit var parms: RelativeLayout.LayoutParams
     var startwidth = 0
     var startheight = 0
     var dx = 0f
@@ -212,23 +258,21 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
     var y = 0f
     var angle = 0f
 
-
     private fun spacing(event: MotionEvent): Float {
         val x = event.getX(0) - event.getX(1)
         val y = event.getY(0) - event.getY(1)
-        return Math.sqrt((x * x + y * y).toDouble()).toFloat()
+        return sqrt((x * x + y * y).toDouble()).toFloat()
     }
+
     private fun rotation(event: MotionEvent): Float {
         val delta_x = (event.getX(0) - event.getX(1)).toDouble()
         val delta_y = (event.getY(0) - event.getY(1)).toDouble()
         val radians = Math.atan2(delta_y, delta_x)
         return Math.toDegrees(radians).toFloat()
     }
+
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-//        Log.i(TAG, "onTouch: Touched")
-        if(v.id == viewTouched || viewTouched == -1){
-//            Log.i(TAG, "onTouch: Touch Processed")
-//            Log.i(TAG, "onTouch: initial viewTouched = $viewTouched")
+        if (v.id == viewTouched || viewTouched == -1) {
             v.bringToFront()
             viewTouched = v.id
             handleTouchEvents(v, event)
@@ -237,16 +281,15 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
 //        Log.i(TAG, "onTouch: Touch Not Processed")
         return false
     }
-    private fun handleTouchEvents(v: View, event: MotionEvent){
+
+    private fun handleTouchEvents(v: View, event: MotionEvent) {
         val view = v as ImageView
         (view.drawable as BitmapDrawable).setAntiAlias(true)
         when (event.action and MotionEvent.ACTION_MASK) {
             MotionEvent.ACTION_DOWN -> {
                 parms = view.layoutParams as RelativeLayout.LayoutParams
-                startwidth = parms!!.width
-                startheight = parms!!.height
-                dx = event.rawX - parms!!.leftMargin
-                dy = event.rawY - parms!!.topMargin
+                dx = event.rawX - parms.leftMargin
+                dy = event.rawY - parms.topMargin
                 MODE = DRAG
             }
             MotionEvent.ACTION_POINTER_DOWN -> {
@@ -257,55 +300,85 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
                 d = rotation(event)
             }
             MotionEvent.ACTION_UP -> {
+                if (parms.leftMargin < -view.width / 2 || parms.topMargin < -view.height / 2 || parms.leftMargin > binding.frameLayoutPostPreview.width - view.width / 2
+                    || parms.topMargin > binding.frameLayoutPostPreview.height - view.height / 2
+                ) {
+                    photoMap.remove(view.id)
+                    binding.frameLayoutPostPreview.removeView(view)
+                }
                 viewTouched = -1
-//                Log.i(TAG, "handleTouchEvents: viewTouched = -1")
             }
             MotionEvent.ACTION_POINTER_UP -> MODE = NONE
+
             MotionEvent.ACTION_MOVE -> if (MODE == DRAG) {
-                x = event.rawX
-                y = event.rawY
-                parms!!.leftMargin = ((x - dx).toInt())
-                parms!!.topMargin = ((y - dy).toInt())
-                parms!!.rightMargin = 0
-                parms!!.bottomMargin = 0
-                parms!!.rightMargin = parms!!.leftMargin + 5 * parms!!.width
-                parms!!.bottomMargin = parms!!.topMargin + 10 * parms!!.height
-                view.layoutParams = parms
+                changePosition(event, view)
             } else if (MODE == ZOOM) {
                 if (event.pointerCount == 2) {
-                    newRot = rotation(event)
-                    val r: Float = newRot - d
-                    angle = r
-                    x = event.rawX
-                    y = event.rawY
-                    val newDist = spacing(event)
-                    if (newDist > 10f) {
-                        val scale: Float = newDist / oldDist * view.scaleX
-                        if (scale > 0.6) {
-                            scalediff = scale
-                            view.scaleX = scale
-                            view.scaleY = scale
-                        }
-                    }
-                    view.animate().rotationBy(angle).setDuration(0).setInterpolator(
-                        LinearInterpolator()
-                    ).start()
-                    x = event.rawX
-                    y = event.rawY
-                    parms!!.leftMargin = ((x - dx + scalediff).toInt())
-                    parms!!.topMargin = ((y - dy + scalediff).toInt())
-                    parms!!.rightMargin = 0
-                    parms!!.bottomMargin = 0
-                    parms!!.rightMargin = parms!!.leftMargin + 5 * parms!!.width
-                    parms!!.bottomMargin = parms!!.topMargin + 10 * parms!!.height
-                    view.layoutParams = parms
+                    rotateZoom(event, view)
                 }
             }
         }
     }
 
+    private fun changePosition(event: MotionEvent, view: View) {
+        x = event.rawX
+        y = event.rawY
+        val changeMarginX = ((x - dx).toInt()) - parms.leftMargin
+        val changeMarginY = ((y - dy).toInt()) - parms.topMargin
+        parms.leftMargin += changeMarginX
+        parms.topMargin += changeMarginY
+        parms.rightMargin -= changeMarginX
+        parms.bottomMargin -= changeMarginY
+        view.layoutParams = parms
+
+        photoMap[view.id]!!.leftMargin = parms.leftMargin
+        photoMap[view.id]!!.topMargin = parms.topMargin
+        photoMap[view.id]!!.rightMargin = parms.rightMargin
+        photoMap[view.id]!!.bottomMargin = parms.bottomMargin
+
+        val scale = photoMap[view.id]!!.scale
+
+        if(parms.leftMargin < -view.width/2 || parms.topMargin < -view.height/2 || parms.leftMargin > binding.frameLayoutPostPreview.width-view.width/2
+            || parms.topMargin > binding.frameLayoutPostPreview.height-view.height/2)
+        {
+            // ADD CANVAS FOR DELETING IMAGE
+            Log.d(TAG, "changePosition: Deleting Image")
+        }
+
+
+//        Log.d(
+//            TAG,
+//            "changePosition: ${parms.leftMargin}  and  ${parms.rightMargin} and ${parms.topMargin}  and  ${parms.bottomMargin}   " +
+//                    "views-> ${view.width} and ${view.height}  .... ${binding.frameLayoutPostPreview.width} and ${binding.frameLayoutPostPreview.height}"
+//        )
+    }
+
+    private fun rotateZoom(event: MotionEvent, view: View) {
+        newRot = rotation(event)
+        val r: Float = newRot - d
+        angle = r
+
+        val newDist = spacing(event)
+        if (newDist > 3f) {
+            val scale: Float = newDist / oldDist * view.scaleX
+            if (scale > 0.2) {
+                scalediff = scale
+                view.scaleX = scale
+                view.scaleY = scale
+                photoMap[view.id]!!.scale = scale
+            }
+        }
+        view.animate().rotationBy(angle).setDuration(0).setInterpolator(
+            LinearInterpolator()
+        ).start()
+        photoMap[view.id]!!.angle += angle
+        Log.d(TAG, "rotateZoom: angle = ${photoMap[view.id]!!.angle}")
+
+        changePosition(event, view)
+    }
 
     private fun createBitmapFromView(v: View): Bitmap? {
+
         var screenshot: Bitmap? = null
         try {
             screenshot = Bitmap.createBitmap(
@@ -318,7 +391,7 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to capture screenshot because:" + e.message)
         }
-        if(screenshot!=null){
+        if (screenshot != null) {
             Log.i(
                 TAG,
                 "createBitmapFromView: width=${screenshot.width}  height=${screenshot.height}  size=${screenshot.byteCount}"
@@ -340,9 +413,57 @@ class FragmentAddPost : Fragment() , View.OnTouchListener {
         if (image.byteCount <= 1000000)
             return image
 
-        val screenshot=Bitmap.createScaledBitmap(image, scaleWidth, scaleHeight, false)
-        Log.i(TAG, "createBitmapFromView: width=${screenshot.width}  height=${screenshot.height}  size=${screenshot.byteCount}")
+        val screenshot = Bitmap.createScaledBitmap(image, scaleWidth, scaleHeight, false)
+        Log.i(
+            TAG,
+            "createBitmapFromView: width=${screenshot.width}  height=${screenshot.height}  size=${screenshot.byteCount}"
+        )
         return screenshot
     }
 
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "onStart: ")
+        reDrawPhotos(viewModel.photoMap)
+    }
+
+    private fun reDrawPhotos(mp: HashMap<Int, BitmapModel>) {
+        for ((_, value) in mp) {
+            val imgView = ImageView(context)
+            val lp = RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            )
+            lp.leftMargin = value.leftMargin
+            lp.topMargin = value.topMargin
+            lp.rightMargin = value.rightMargin
+            lp.bottomMargin = value.bottomMargin
+
+            imgView.layoutParams = lp
+            imgView.id = value.id
+            imgView.adjustViewBounds = true
+            imgView.setImageBitmap(value.bitmap)    // TODO(set with glide)
+
+            imgView.minimumWidth = 50
+            imgView.minimumHeight = 50
+            imgView.scaleX = value.scale
+            imgView.scaleY = value.scale
+
+            imgView.rotation = value.angle
+
+//        Glide.with(requireContext())
+//                .load(uri)
+//                .into(imgView)
+
+            imgView.setOnTouchListener(this)
+            binding.frameLayoutPostPreview.addView(imgView)
+        }
+
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d(TAG, "onStop: ")
+        viewModel.photoMap = photoMap
+    }
 }

@@ -1,5 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<navigation xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/make_post_nav_graph">
-
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigationAddPost"
+    app:startDestination="@id/fragmentAddPost">
+    <fragment
+        android:id="@+id/fragmentPostPreview"
+        android:name="com.example.memer.FRAGMENTS.FragmentPostPreview"
+        android:label="fragment_post_preview"
+        tools:layout="@layout/fragment_post_preview">
+        <action
+            android:id="@+id/action_fragmentPostPreview_to_fragmentHomePage"
+            app:destination="@id/fragmentHomePage"
+            app:popUpTo="@+id/nav_graph"
+            app:popUpToInclusive="true"/>
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentAddPost"
+        android:name="com.example.memer.FRAGMENTS.FragmentAddPost"
+        tools:layout="@layout/fragment_add_post">
+        <action
+            android:id="@+id/action_fragmentAddPost_to_fragmentCrop"
+            app:destination="@id/fragmentCrop" />
+        <action
+            android:id="@+id/action_fragmentAddPost_to_fragmentPostPreview"
+            app:destination="@id/fragmentPostPreview" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentCrop"
+        android:name="com.example.memer.FRAGMENTS.FragmentCrop"
+        android:label="fragment_crop"
+        tools:layout="@layout/fragment_crop" />
 </navigation>

@@ -16,6 +16,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
@@ -77,7 +78,7 @@ class FragmentGallery : Fragment(), AdapterGallery.ItemClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        navController =Navigation.findNavController(requireActivity(),R.id.nav_host_fragment)
+        navController =requireParentFragment().findNavController()
     }
     private fun initRecyclerView() {
         gridLayoutManager = GridLayoutManager(context, 4)

@@ -83,6 +83,7 @@ class AdapterGallery(
                 .error(R.drawable.ic_launcher_background)
 
             Glide.with(mContext)
+                .applyDefaultRequestOptions(requestOptionsPost)
                 .load(galleryItem.uri)
                 .thumbnail(0.33f)
                 .centerCrop()

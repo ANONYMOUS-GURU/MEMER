@@ -12,53 +12,13 @@
         <action
             android:id="@+id/action_fragmentHomePage_to_fragmentChat"
             app:destination="@id/fragmentChat" />
-        <action
-            android:id="@+id/action_fragmentHomePage_to_fragmentRandomUserProfile"
-            app:destination="@id/fragmentRandomUserProfile" />
-        <action
-            android:id="@+id/action_fragmentHomePage_to_fragmentComments"
-            app:destination="@id/fragmentComments" />
+
     </fragment>
     <fragment
         android:id="@+id/fragmentChat"
         android:name="com.example.memer.FRAGMENTS.FragmentChat"
         tools:layout="@layout/fragment_chat" />
-    <fragment
-        android:id="@+id/fragmentLogIn"
-        android:name="com.example.memer.FRAGMENTS.FragmentLogIn"
-        tools:layout="@layout/fragment_log_in">
-        <action
-            android:id="@+id/action_fragmentLogIn_to_fragmentHomePage"
-            app:destination="@id/fragmentHomePage"
-            app:popUpTo="@+id/nav_graph"
-            app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/action_fragmentLogIn_to_fragmentProfile"
-            app:destination="@id/fragmentProfile" />
-        <action
-            android:id="@+id/action_fragmentLogIn_to_fragmentEditProfile"
-            app:destination="@id/fragmentEditProfile"
-            app:popUpTo="@+id/nav_graph"
-            app:popUpToInclusive="true"/>
-    </fragment>
-    <fragment
-        android:id="@+id/fragmentEditProfile"
-        android:name="com.example.memer.FRAGMENTS.FragmentEditProfile"
-        tools:layout="@layout/fragment_edit_profile">
-        <action
-            android:id="@+id/action_fragmentEditProfile_to_fragmentHomePage"
-            app:destination="@id/fragmentHomePage"
-            app:popUpTo="@+id/nav_graph"
-            app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/action_fragmentEditProfile_to_fragmentProfile"
-            app:destination="@id/fragmentProfile"
-            app:popUpTo="@+id/nav_graph"
-            app:popUpToInclusive="true"/>
-        <action
-            android:id="@+id/action_fragmentEditProfile_to_fragmentProfilePic"
-            app:destination="@id/fragmentProfilePic" />
-    </fragment>
+
     <fragment
         android:id="@+id/fragmentUserActivity"
         android:name="com.example.memer.FRAGMENTS.FragmentNotifications"
@@ -72,99 +32,52 @@
             app:destination="@id/fragmentSearchResult" />
     </fragment>
     <fragment
-        android:id="@+id/fragmentProfile"
-        android:name="com.example.memer.FRAGMENTS.FragmentProfile"
-        tools:layout="@layout/fragment_profile">
-        <action
-            android:id="@+id/action_fragmentProfile_to_fragmentAddPost"
-            app:destination="@id/navigationAddPost" />
-        <action
-            android:id="@+id/action_fragmentProfile_to_fragmentEditProfile"
-            app:destination="@id/fragmentEditProfile" />
-        <action
-            android:id="@+id/action_fragmentProfile_to_fragmentAddPost2"
-            app:destination="@id/navigationAddPost" />
-        <action
-            android:id="@+id/action_fragmentProfile_to_fragmentProfilePic"
-            app:destination="@id/fragmentProfilePic" />
-    </fragment>
-    <action
-        android:id="@+id/action_global_fragmentLogIn"
-        app:destination="@id/fragmentLogIn"
-        app:launchSingleTop="false"
-        app:popUpTo="@+id/nav_graph"
-        app:popUpToInclusive="true" />
-    <fragment
         android:id="@+id/fragmentSearchResult"
         android:name="com.example.memer.FRAGMENTS.FragmentSearchResult"
         tools:layout="@layout/fragment_search_result" />
     <fragment
-        android:id="@+id/fragmentRandomUserProfile"
-        android:name="com.example.memer.FRAGMENTS.FragmentRandomUserProfile"
-        android:label="fragment_random_user_profile"
-        tools:layout="@layout/fragment_random_user_profile" >
-        <argument
-            android:name="randomUser"
-            app:argType="com.example.memer.MODELS.UserData" />
-    </fragment>
-    <fragment
         android:id="@+id/fragmentComments"
         android:name="com.example.memer.FRAGMENTS.FragmentComments"
-        android:label="fragment_comments"
-        tools:layout="@layout/fragment_comments" >
-        <action
-            android:id="@+id/action_fragmentComments_to_fragmentRandomUserProfile"
-            app:destination="@id/fragmentRandomUserProfile" />
-        <action
-            android:id="@+id/action_fragmentComments_to_fragmentProfile"
-            app:destination="@id/fragmentProfile" />
+        tools:layout="@layout/fragment_comments">
+        <argument
+            android:name="post"
+            app:argType="com.example.memer.MODELS.PostContents2" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentLikes"
+        android:name="com.example.memer.FRAGMENTS.FragmentLikes"
+        tools:layout="@layout/fragment_likes">
+
         <argument
             android:name="post"
             app:argType="com.example.memer.MODELS.PostContents2" />
     </fragment>
 
-    <navigation android:id="@+id/navigationAddPost"
-        app:startDestination="@id/fragmentAddPost">
-        <fragment
-            android:id="@+id/fragmentPostPreview"
-            android:name="com.example.memer.FRAGMENTS.FragmentPostPreview"
-            android:label="fragment_post_preview"
-            tools:layout="@layout/fragment_post_preview">
-            <action
-                android:id="@+id/action_fragmentPostPreview_to_fragmentHomePage"
-                app:destination="@id/fragmentHomePage"
-                app:popUpTo="@+id/nav_graph"
-                app:popUpToInclusive="true"/>
-        </fragment>
-        <fragment
-            android:id="@+id/fragmentAddPost"
-            android:name="com.example.memer.FRAGMENTS.FragmentAddPost"
-            tools:layout="@layout/fragment_add_post">
-            <action
-                android:id="@+id/action_fragmentAddPost_to_fragmentCrop"
-                app:destination="@id/fragmentCrop" />
-            <action
-                android:id="@+id/action_fragmentAddPost_to_fragmentPostPreview"
-                app:destination="@id/fragmentPostPreview" />
-        </fragment>
-        <fragment
-            android:id="@+id/fragmentTemplates"
-            android:name="com.example.memer.FRAGMENTS.FragmentTemplates"
-            android:label="fragment_templates"
-            tools:layout="@layout/fragment_templates" />
-        <fragment
-            android:id="@+id/fragmentCrop"
-            android:name="com.example.memer.FRAGMENTS.FragmentCrop"
-            android:label="fragment_crop"
-            tools:layout="@layout/fragment_crop" />
-        <fragment
-            android:id="@+id/fragmentGallery"
-            android:name="com.example.memer.FRAGMENTS.FragmentGallery"
-            android:label="fragment_gallery"
-            tools:layout="@layout/fragment_gallery" />
-    </navigation>
+    <include app:graph = "@navigation/make_post_nav_graph"/>
+    <include app:graph = "@navigation/nav_profile"/>
+    <include app:graph = "@navigation/nav_random_profile"/>
+<!--    <include app:graph = "@navigation/nav_login"/>-->
+
+    <action android:id="@+id/action_global_fragmentHomePage"
+        app:destination="@id/fragmentHomePage"
+        app:launchSingleTop="false"
+        app:popUpTo="@+id/nav_graph"
+        app:popUpToInclusive="true"/>
+    <action android:id="@+id/action_global_fragmentProfile"
+        app:destination="@id/navigation_profile" />
+    <action android:id="@+id/action_global_fragmentRandomUserProfile"
+        app:destination="@id/nav_random_profile">
+        <argument
+            android:name="randomUserId"
+            app:argType="string" />
+    </action>
+    <action android:id="@+id/action_global_fragmentComments"
+        app:destination="@id/fragmentComments"/>
+    <action android:id="@+id/action_global_fragmentLikes" app:destination="@id/fragmentLikes" />
     <fragment
-        android:id="@+id/fragmentProfilePic"
-        android:name="com.example.memer.FRAGMENTS.FragmentProfilePic" />
+        android:id="@+id/fragmentLogIn"
+        android:name="com.example.memer.FRAGMENTS.FragmentLogIn"
+        android:label="fragment_log_in"
+        tools:layout="@layout/fragment_log_in" /><action android:id="@+id/action_global_fragmentLogIn" app:destination="@id/fragmentLogIn"/>
 
 </navigation>

@@ -11,10 +11,17 @@ object GLOBAL_INFORMATION {
     const val COMMENTS_COLLECTION = "COMMENTS_COLLECTION"
     const val USER_RELATION_COLLECTION = "USER_RELATION_COLLECTION"
     const val COMMENT_REPLY_COLLECTION = "COMMENT_REPLIES_COLLECTION"
+    const val USER_PUBLIC_COLLECTION = "USER_PUBLIC_COLLECTION"
+    const val BOOKMARK_COLLECTION = "BOOKMARK_COLLECTION"
 
-    const val createdAt = "createdAt"
-    const val LIKE_COUNT = "likeCount"
-    const val commentCount = "commentCount"
-    const val commentReplyCount = "commentReplyCount"
+    const val createdAtElement = "createdAt"
+    const val likeCountElement = "likeCount"
+    const val commentCountElement = "commentCount"
+    const val commentReplyCountElement = "commentReplyCount"
+    const val bookMarkCountElement = "bookMarkCount"
+    const val userIdElement = "userId"
+    const val nameOfUserElement = "nameOfUser"
+
+
 
 }

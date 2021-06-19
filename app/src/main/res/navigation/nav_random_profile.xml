@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_random_profile"
+    app:startDestination="@id/fragmentRandomUserProfile">
+
+
+
+    <fragment
+        android:id="@+id/fragmentRandomUserProfile"
+        android:name="com.example.memer.FRAGMENTS.FragmentRandomUserProfile"
+        android:label="fragment_random_user_profile"
+        tools:layout="@layout/fragment_random_user_profile" >
+
+        <argument
+            android:name="randomUserId"
+            app:argType="string" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/fragmentRandomUserPost"
+        android:name="com.example.memer.FRAGMENTS.FragmentRandomUserPost"
+        android:label="fragment_random_user_post"
+        tools:layout="@layout/fragment_random_user_post" />
+
+
+</navigation>

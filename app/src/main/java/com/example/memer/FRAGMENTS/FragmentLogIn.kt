@@ -250,14 +250,16 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
 
 
     private fun updateUI(user: UserData, accessType: String) {
-        loadingDialog.dismissDialog()
+        try {
+            loadingDialog.dismissDialog()
+        } catch (e: Exception) {
+            Log.e(TAG, "updateUI: Error", e)
+        }
         Toast.makeText(context, "Sign In With $accessType Successful", Toast.LENGTH_SHORT)
             .show()
         when (user.isNewUser) {
-            true -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentEditProfile)
-            false -> navController.navigate(R.id.action_fragmentLogIn_to_fragmentHomePage)
+            true -> navController.navigate(R.id.action_global_fragmentHomePage)
+            false -> navController.navigate(R.id.action_global_fragmentHomePage)
         }
     }
-
-
 }

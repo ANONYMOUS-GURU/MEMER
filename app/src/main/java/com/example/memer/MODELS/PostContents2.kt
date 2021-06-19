@@ -16,6 +16,10 @@ data class PostContents2(
     val postTypeImage:Boolean,
     val likeCount: Long,
     val commentCount: Long,
+    val username:String,
+    var userAvatarReference:String? = null,
+    val public:Boolean,
+    val bookMarkCount:Long,
     @ServerTimestamp
     val time :Date? = null,
 
@@ -29,19 +33,20 @@ data class PostContents2(
                 getString("postDescription") !!,
                 getBoolean("postTypeImage") !!,
                 getLong("likeCount") !!,
-                getLong("commentCount") !!
+                getLong("commentCount") !!,
+                getString("username") !!,
+                getString("userAvatarReference"),
+                getBoolean("public") !!,
+                getLong("bookMarkCount")!!
             )
         }
     }
 }
 
-
-
 data class PostHomePage(
     val postContents: PostContents2,
-    var likeCount : Long = 0,
+    var isLiked : Long = 0,
     var isBookmarked: Boolean =  false,
     var isCommented : Boolean = false,
-    var username:String? = null,
-    var userAvatarReference:String? = null
+
 )

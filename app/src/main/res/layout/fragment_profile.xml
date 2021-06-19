@@ -11,7 +11,7 @@
         android:id="@+id/profilePageToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/teal_200"
         android:elevation="4dp"
         android:minHeight="?attr/actionBarSize"
         app:menu="@menu/profile_page_menu">
@@ -28,8 +28,7 @@
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/gradient_gray">
+        android:layout_height="match_parent">
 
 
         <LinearLayout
@@ -157,7 +156,6 @@
                 android:background="@color/white"
                 android:text="@string/edit_profile"
                 android:textAllCaps="false"
-                android:textColor="@color/black"
                 android:textSize="12sp" />
 
             <LinearLayout

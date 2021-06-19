@@ -80,7 +80,7 @@ class HomePageAdapter(private val itemClickListener: ItemClickListener, val mCon
 
             Glide.with(itemView.context)
                 .applyDefaultRequestOptions(requestOptionsAvatar)
-                .load(postHomePage.userAvatarReference)
+                .load(postHomePage.postContents.userAvatarReference)
                 .circleCrop()
                 .into(userAvatar)
 
@@ -103,12 +103,20 @@ class HomePageAdapter(private val itemClickListener: ItemClickListener, val mCon
             likesCount.setOnClickListener(this)
             commentsCount.setOnClickListener(this)
 
-            username.text = postHomePage.username
+            username.text = postHomePage.postContents.username
 
-            if(postHomePage.likeCount > 0)
+            if(postHomePage.isBookmarked)
+                bookmark.setImageDrawable(getDrawable(mContext,R.drawable.bookmark_filled_black))
+            else
+                bookmark.setImageDrawable(getDrawable(mContext,R.drawable.bookmark_border_black))
+
+
+            if(postHomePage.isLiked > 0)
                 likeOption.setImageDrawable(getDrawable(mContext,R.drawable.like_icon_filled))
             else
                 likeOption.setImageDrawable(getDrawable(mContext,R.drawable.like_icon_border))
+
+
 
             if(postHomePage.isCommented)
                 addComment.setImageDrawable(getDrawable(mContext,R.drawable.default_avatar))
