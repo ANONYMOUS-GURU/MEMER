@@ -1,6 +1,7 @@
 package com.example.memer.FRAGMENTS
 
 import android.os.Bundle
+import android.os.Message
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -12,10 +13,12 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import com.example.memer.HELPERS.GLOBAL_INFORMATION
 import com.example.memer.HELPERS.LoadingDialog
+import com.example.memer.MODELS.LoginState
 import com.example.memer.MODELS.UserData
 import com.example.memer.databinding.FragmentLogInBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -30,7 +33,9 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
 import com.example.memer.R
+import com.example.memer.VIEWMODELS.ViewModelLogin
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
+import java.lang.Exception
 
 class FragmentLogIn : Fragment(), View.OnClickListener {
 
@@ -42,7 +47,7 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     private lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
     private lateinit var loadingDialog: LoadingDialog
     private lateinit var navController: NavController
-    private val viewModelLogin: ViewModelUserInfo by activityViewModels()
+    private val viewModelLogin: ViewModelLogin by viewModels()
 
     companion object {
         private const val TAG = "FragmentLogIn"
@@ -129,12 +134,15 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)
-        viewModelLogin.userLD.observe(viewLifecycleOwner, {
-            if (it != null) {
-                Log.d(TAG, "onViewCreated: it not null")
-                updateUI(it, it.signInType)
-            } else
-                Log.d(TAG, "onViewCreated: it = null")
+        viewModelLogin.loginStateLD.observe(viewLifecycleOwner, {
+            when(it){
+                is LoginState.LogInFailed -> {loginFailed(it.message,it.accessType,it.exception)}
+                is LoginState.TryingLogIn -> {signingIn(it.accessType)}
+                is LoginState.LogInSuccess -> {goToAddProfilePage(it)}
+                is LoginState.Completed-> {goToHomePage(it.message,it.signInType)}
+                is LoginState.LoggedOut -> {}
+                is LoginState.UserAvailable -> goToAddProfilePage(it)
+            }
         })
     }
 
@@ -195,7 +203,7 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     }
 
     private fun verifyPhoneNumberWithCode(verificationId: String?, code: String) {
-        loadingDialog.startLoadingDialog("Signing you in ...")
+//        loadingDialog.startLoadingDialog("Signing you in ...")
         val credential = PhoneAuthProvider.getCredential(verificationId!!, code)
         viewModelLogin.signInWithPhoneAuthCredential(credential)
     }
@@ -220,8 +228,6 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
         Toast.makeText(context, "Login Facebook", Toast.LENGTH_SHORT).show()
 //        TODO("Not yet implemented")
     }
-
-
     private fun signInWithGoogle() {
         val signInIntent = mGoogleSignInClient.signInIntent
         googleSignInActivity.launch(signInIntent)
@@ -237,8 +243,6 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
                     // Google Sign In was successful, authenticate with Firebase
                     val account = task.getResult(ApiException::class.java)!!
                     Log.d(TAG, "GoogleSignInSuccessful:" + account.id)
-
-                    loadingDialog.changeText("Signing you in ... ")
                     viewModelLogin.firebaseAuthWithGoogle(account.idToken!!)
                 } catch (e: ApiException) {
                     Log.w(TAG, "Google sign in failed", e)
@@ -248,18 +252,36 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
             }
         }
 
+    private fun signingIn(signInType:String){
+        loadingDialog.changeText("Signing In With $signInType")
+    }
 
-    private fun updateUI(user: UserData, accessType: String) {
-        try {
-            loadingDialog.dismissDialog()
-        } catch (e: Exception) {
-            Log.e(TAG, "updateUI: Error", e)
-        }
+    private fun updateUI(message: String,isNewUser:Boolean, accessType: String) {
+        loadingDialog.dismissDialog()
+
         Toast.makeText(context, "Sign In With $accessType Successful", Toast.LENGTH_SHORT)
             .show()
-        when (user.isNewUser) {
+        when (isNewUser) {
             true -> navController.navigate(R.id.action_global_fragmentHomePage)
             false -> navController.navigate(R.id.action_global_fragmentHomePage)
         }
+    }
+
+    private fun loginFailed(message: String,accessType: String,exception: Exception){
+        loadingDialog.dismissDialog()
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Log.e(TAG, "loginFailed: $message", exception )
+    }
+    private fun goToAddProfilePage(callState:LoginState){
+        if(callState is LoginState.LogInSuccess) {
+            loadingDialog.dismissDialog()
+        }
+        Log.d(TAG, "goToAddProfilePage: Created New Account")
+        navController.navigate(R.id.action_fragmentLogIn_to_fragmentEditProfileNewUser)
+    }
+    private fun goToHomePage(message: String,accessType: String){
+        loadingDialog.dismissDialog()
+        Log.d(TAG, "goToHomePage: Welcome Back")
+        navController.navigate(R.id.action_global_fragmentHomePage)
     }
 }

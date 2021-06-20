@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation_Log_in"
+    app:startDestination="@id/fragmentLogIn">
+    <fragment
+        android:id="@+id/fragmentLogIn"
+        android:name="com.example.memer.FRAGMENTS.FragmentLogIn"
+        android:label="fragment_log_in"
+        tools:layout="@layout/fragment_log_in" >
+        <action
+            android:id="@+id/action_fragmentLogIn_to_fragmentEditProfileNewUser"
+            app:destination="@id/fragmentEditProfileNewUser"
+            app:launchSingleTop="false"
+            app:popUpTo="@+id/nav_graph"
+            app:popUpToInclusive="true"/>
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentEditProfileNewUser"
+        android:name="com.example.memer.FRAGMENTS.FragmentEditProfileNewUser"
+        tools:layout="@layout/fragment_edit_profile_new_user">
+        <action
+            android:id="@+id/action_fragmentEditProfileNewUser_to_fragmentProfilePicNewUser"
+            app:destination="@id/fragmentProfilePicNewUser"
+            />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentProfilePicNewUser"
+        android:name="com.example.memer.FRAGMENTS.FragmentProfilePicNewUser"
+        tools:layout="@layout/fragment_profile_pic_new_user" />
+
+</navigation>

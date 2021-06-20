@@ -7,7 +7,9 @@ import com.example.memer.HELPERS.GLOBAL_INFORMATION.USER_PUBLIC_COLLECTION
 import com.example.memer.HELPERS.GLOBAL_INFORMATION.USER_RELATION_COLLECTION
 import com.example.memer.MODELS.*
 import com.example.memer.MODELS.UserData.Companion.toUserData
+import com.example.memer.MODELS.UserEditInfo.Companion.toUserEditInfo
 import com.example.memer.MODELS.UserProfileInfo.Companion.toUserProfileInfo
+import com.example.memer.VIEWMODELS.ViewModelLogin
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -62,15 +64,30 @@ object UserDb {
     // TODO(SHOULD BE DONE FROM A CLOUD FUNCTION)
     suspend fun addNewUser(userData: UserData) {
         val db = FirebaseFirestore.getInstance()
+        val docIdRef = FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(userData.userId)
+        val doc = docIdRef.get().await()
         val batch = db.batch()
 
-        batch.set(db.collection(USER_COLLECTION).document(userData.userId), userData)
-        batch.set(
-            db.collection(USER_PUBLIC_COLLECTION).document(userData.userId),
-            userData.toUserProfileInfo()
-        )
+        if(!doc.exists()){
+            Log.d(TAG, "addNewUser: Doc Does Not exist .. Writing New User")
+            batch.set(db.collection(USER_COLLECTION).document(userData.userId), userData)
+            batch.set(
+                db.collection(USER_PUBLIC_COLLECTION).document(userData.userId),
+                userData.toUserProfileInfo()
+            )
+        }
+        else{
+            Log.d(TAG, "addNewUser: Doc exists overwriting profile params")
+            batch.set(db.collection(USER_COLLECTION).document(userData.userId), userData.toUserEditInfo(),
+                SetOptions.merge())
+            batch.set(
+                db.collection(USER_PUBLIC_COLLECTION).document(userData.userId),
+                userData.toUserEditInfo()
+            )
+        }
         batch.commit().await()
     }
+
 
     // TODO(CHECK IF USER ID OF REQUEST MATCHES THE USER ID WHERE REQUEST CAME FROM)  <<--- DO THIS FOR ALL REQUESTS
     suspend fun getOldUser(mUser: FirebaseUser): UserData {

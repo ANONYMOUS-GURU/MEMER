@@ -119,3 +119,23 @@ data class LikedBy(
     }
 }
 
+data class UserTextEditInfo(
+    val username: String,
+    val nameOfUser: String,
+    val bio:String
+)
+
+data class UserEditInfo(
+    val username: String,
+    val nameOfUser: String,
+    val bio:String,
+    val userAvatarReference: String?,
+    val userProfilePicReference: String?
+){
+    companion object{
+        fun UserData.toUserEditInfo():UserEditInfo{
+            return UserEditInfo(username, nameOfUser, bio, userAvatarReference,
+                userProfilePicReference)
+        }
+    }
+}

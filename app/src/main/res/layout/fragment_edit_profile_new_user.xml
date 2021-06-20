@@ -4,14 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".FRAGMENTS.FragmentEditProfile">
+    tools:context=".FRAGMENTS.FragmentEditProfileNewUser">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <androidx.appcompat.widget.Toolbar
-            android:id="@+id/editProfilePageToolbar"
+            android:id="@+id/editProfilePageNewUserToolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/teal_200"
@@ -21,21 +21,21 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-                <TextView
-                    android:id="@+id/titleTextViewEditProfile"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="32dp"
-                    android:text="@string/edit_profile"
-                    android:textColor="@color/black"
-                    android:textSize="16sp" />
+            <TextView
+                android:id="@+id/titleTextViewEditProfileNewUser"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="32dp"
+                android:text="@string/edit_profile"
+                android:textColor="@color/black"
+                android:textSize="16sp" />
 
 
         </androidx.appcompat.widget.Toolbar>
 
 
         <LinearLayout
-            android:id="@+id/imageViewLinearLayoutEditProfile"
+            android:id="@+id/imageViewLinearLayoutEditProfileNewUser"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="48dp"
@@ -44,14 +44,14 @@
             app:layout_constraintStart_toStartOf="parent"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            app:layout_constraintTop_toBottomOf="@+id/editProfilePageToolbar">
+            app:layout_constraintTop_toBottomOf="@+id/editProfilePageNewUserToolbar">
 
 
             <ImageView
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:layout_marginVertical="4dp"
-                android:id="@+id/profileImageEditProfile"
+                android:id="@+id/profileImageEditProfileNewUser"
                 android:src="@drawable/default_avatar"/>
 
             <TextView
@@ -59,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="12sp"
                 android:textColor="@color/blue"
-                android:id="@+id/removeProfilePictureEditProfile"
+                android:id="@+id/removeProfilePictureEditProfileNewUser"
                 android:text="@string/remove_profile_picture"/>
 
         </LinearLayout>
@@ -73,11 +73,11 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/imageViewLinearLayoutEditProfile">
+            app:layout_constraintTop_toBottomOf="@+id/imageViewLinearLayoutEditProfileNewUser">
 
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/nameEditProfileLayout"
+                android:id="@+id/nameEditProfileNewUserLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_margin="8dp"
@@ -86,14 +86,14 @@
                 android:inputType="textPersonName">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/nameEditProfileText"
+                    android:id="@+id/nameEditProfileNewUserText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/usernameEditProfileLayout"
+                android:id="@+id/usernameEditProfileNewUserLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_margin="8dp"
@@ -103,14 +103,14 @@
                 android:inputType="text">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/usernameEditProfileText"
+                    android:id="@+id/usernameEditProfileNewUserText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/bioEditProfileLayout"
+                android:id="@+id/bioEditProfileNewUserLayout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_margin="8dp"
@@ -120,7 +120,7 @@
                 android:inputType="textMultiLine">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/bioEditProfileText"
+                    android:id="@+id/bioEditProfileNewUserText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
 

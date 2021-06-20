@@ -4,137 +4,202 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.UserDb
+import com.example.memer.HELPERS.GLOBAL_INFORMATION.USER_COLLECTION
 import com.example.memer.HELPERS.InternalStorage
 import com.example.memer.MODELS.LoginState
-import com.example.memer.MODELS.UserBasicInfo
-import com.example.memer.MODELS.UserData.Companion.toUserData
+import com.example.memer.MODELS.UserData
+import com.example.memer.MODELS.UserTextEditInfo
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.Exception
+import kotlin.math.log
+import kotlin.math.sign
 
 
-class ViewModelLogin (application: Application) : AndroidViewModel(application) {
+class ViewModelLogin(application: Application) : AndroidViewModel(application) {
 
-    private lateinit var loginState: LoginState
+    var userId:String? = Firebase.auth.currentUser?.uid
+
+    var userTextEditInfo: UserTextEditInfo = UserTextEditInfo("", "", "")
+
+    private var imageProfileRef:String? = null
+    private var signInType:String = ""
+
+    private var imageRef: String? = null
+    private val imageRefMLD= MutableLiveData<String?>()
+    val imageRefLD:LiveData<String?>
+        get() = imageRefMLD
+
+    private var loginState: LoginState
     private var loginStateMLD: MutableLiveData<LoginState> = MutableLiveData<LoginState>()
     val loginStateLD : LiveData<LoginState>
         get() = loginStateMLD
 
     init {
-        loginState = LoginState.LoggedOut
+        imageRefMLD.value = imageRef
+        loginState = if(userId == null)
+            LoginState.LoggedOut
+        else
+            LoginState.UserAvailable("")
+
+        loginStateMLD.value = loginState
     }
 
     fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
+        signInType = ACCESS_PHONE
 
-        loginState = LoginState.TryingLogIn(ACCESS_PHONE)
+        loginState = LoginState.TryingLogIn(signInType)
         loginStateMLD.value = loginState
 
         val mAuth = Firebase.auth
-        mAuth.signInWithCredential(credential).addOnCompleteListener() { task ->
+        mAuth.signInWithCredential(credential).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                // Sign in success, update UI with the signed-in user's information
                 Log.d(TAG, "signInWithCredential:success")
-                val user = task.result?.user
-                val isNewUser = task.result?.additionalUserInfo?.isNewUser == true
-                if(user!=null){
-                    if(isNewUser){
-                        createAndWriteNewUser(user, ACCESS_PHONE)
-                    }
+                val user = mAuth.currentUser
+                userId  = user!!.uid
+                val docIdRef = FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(userId !!)
+                docIdRef.get().addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        val document = it.result
+                        if (document!!.exists()) {
+                            Log.d(TAG, "signInWithPhoneAuthCredential: Old User Found")
+                            writeOldUser(user, signInType)
 
-                    else {
-                        Log.d(TAG, "firebaseAuthWithGoogle: Start getting user data")
-                        writeOldUser(user, ACCESS_PHONE)
+                        } else {
+                            Log.d(TAG, "signInWithPhoneAuthCredential: New User Found")
+                            updateLoginState(user, signInType)
+                        }
+                    } else {
+                        userId = null
+                        Log.e(TAG, "signInWithPhoneAuthCredential: Exception while checking if document exists",it.exception)
+                        userId = null
+                        loginState = LoginState.LogInFailed("", it.exception !!, signInType)
+                        loginStateMLD.value = loginState
                     }
                 }
             } else {
-                var msg = ""
-                Log.w(TAG, "signInWithCredential:failure", task.exception)
-                if (task.exception is FirebaseAuthInvalidCredentialsException) {
-                    msg="Invalid Verification Code"
-                }
-
-                loginState = LoginState.LogInFailed(msg,task.exception!!, ACCESS_PHONE)
+                Log.e(TAG, "signInWithPhoneAuthCredential: sign in failed",task.exception)
+                userId = null
+                loginState = LoginState.LogInFailed("", task.exception!!, signInType)
                 loginStateMLD.value = loginState
             }
         }
     }
     fun firebaseAuthWithGoogle(idToken: String) {
-        loginState = LoginState.TryingLogIn(ACCESS_GOOGLE)
+        signInType = ACCESS_GOOGLE
+        loginState = LoginState.TryingLogIn(signInType)
         loginStateMLD.value = loginState
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         val mAuth = Firebase.auth
-        mAuth.signInWithCredential(credential)
-            .addOnCompleteListener { task ->
+        mAuth.signInWithCredential(credential).addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
                     Log.d(TAG, "signInWithCredential:success")
                     val user = mAuth.currentUser
-                    val isNewUser = task.result?.additionalUserInfo?.isNewUser == true
-                    if(user!=null){
-                        if(isNewUser) {
-                            createAndWriteNewUser(user, ACCESS_GOOGLE)
-                            /*
-                            * Make a new user and wait for above function to complete before
-                            * proceeding. Also store user data in a local file to make use of it in
-                            * ViewModelUser by directly accessing these files. Do them synchronously
-                            * */
+                    userId  = user!!.uid
+                    val docIdRef = FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(userId !!)
+                    docIdRef.get().addOnCompleteListener {
+                        if (it.isSuccessful) {
+                            val document = it.result
+                            if (document!!.exists()) {
+                                Log.d(TAG, "firebaseAuthWithGoogle: Old User Found")
+                                writeOldUser(user, signInType)
 
-                        }
-                        else {
-                            Log.d(TAG, "firebaseAuthWithGoogle: Start getting user data")
-                            /*
-                            *   Download User Data into a local file named User , so that initialize
-                            *   user doesn't need to fetch data from the internet . Also make updates
-                            *   on this file as user info changes and finally delete it when logged
-                            *   out
-                            * */
-                            writeOldUser(user, ACCESS_GOOGLE)
+                            } else {
+                                Log.d(TAG, "firebaseAuthWithGoogle: New User Found")
+                                updateLoginState(user, signInType)
+                            }
+                        } else {
+                            userId = null
+                            Log.e(TAG, "firebaseAuthWithGoogle: Exception while checking if document exists",it.exception)
+                            userId = null
+                            loginState = LoginState.LogInFailed("", it.exception !!, signInType)
+                            loginStateMLD.value = loginState
                         }
                     }
-
                 } else {
-                    loginState = LoginState.LogInFailed("",task.exception!!, ACCESS_GOOGLE)
+                    Log.e(TAG, "firebaseAuthWithGoogle: sign in failed",task.exception)
+                    userId = null
+                    loginState = LoginState.LogInFailed("", task.exception!!, signInType)
                     loginStateMLD.value = loginState
                 }
             }
     }
 
-    private fun createAndWriteNewUser(user: FirebaseUser, signInType:String){
-        val name =  user.displayName !!
+    private fun updateLoginState(user: FirebaseUser, signInType: String){
+        userId = Firebase.auth.currentUser?.uid
         viewModelScope.launch {
-            UserDb.addNewUser(UserBasicInfo(userId = user.uid, nameOfUser = (user.uid.subSequence(0, 5))
-                .toString(), username = user.uid, signInType = signInType, phoneNumber = null)
-                .toUserData())
-            writeUser(user)
             withContext(Dispatchers.Main){
-                loginState = LoginState.LogInSuccess("",signInType,true)
+                loginState = LoginState.LogInSuccess("", signInType, true)
                 loginStateMLD.value = loginState
             }
         }
     }
-    private fun writeOldUser(user:FirebaseUser,signInType: String){
+
+    private fun writeOldUser(user: FirebaseUser, signInType: String){
+        userId = Firebase.auth.currentUser?.uid
         viewModelScope.launch {
             writeUser(user)
+            Log.d(TAG, "writeOldUser: Wrote Old User")
             withContext(Dispatchers.Main){
-                loginState = LoginState.LogInSuccess("",signInType,true)
+                loginState = LoginState.Completed("", signInType)
                 loginStateMLD.value = loginState
             }
         }
     }
-    private suspend fun writeUser(user:FirebaseUser){
+    private suspend fun writeUser(user: FirebaseUser){
         val mUser = UserDb.getOldUser(user)
-        InternalStorage.writeUser(mUser,getApplication())
+        Log.d(TAG, "writeUser: Writing Old User ${mUser.username}")
+        InternalStorage.writeUser(mUser, getApplication())
     }
+    fun updateUserImageReference(_user: Pair<String?, String?>){
+        viewModelScope.launch {
+            InternalStorage.updateUserImageReference(_user.first, _user.second, getApplication())
+            withContext(Dispatchers.Main){
+                imageProfileRef = _user.first
+                imageRef = _user.second
+                imageRefMLD.value = imageRef
+            }
+        }
+    }
+    fun writeNewUser(userTextEditInfo: UserTextEditInfo){
+        viewModelScope.launch {
+            InternalStorage.writeUser(
+                UserData(
+                    userId = userId!!,
+                    userPostCount = 0,
+                    userFollowingCount = 0,
+                    userFollowersCount = 0,
+                    userProfilePicReference = imageProfileRef,
+                    userAvatarReference = imageRef,
+                    username = userTextEditInfo.username,
+                    nameOfUser = userTextEditInfo.nameOfUser,
+                    bio = userTextEditInfo.bio,
+                    signInType = signInType,
+                    phoneNumber = if (signInType == ACCESS_PHONE) Firebase.auth.currentUser?.phoneNumber else ""
+                ),
+                getApplication()
+            )
+            UserDb.addNewUser(InternalStorage.readUser(getApplication()))
+            withContext(Dispatchers.Main){
+                loginState = LoginState.Completed("", signInType)
+                loginStateMLD.value = loginState
+            }
+        }
+    }
+
 
     companion object{
         private const val TAG = "VMLogin"
         private const val ACCESS_GOOGLE = "GOOGLE"
         private const val ACCESS_PHONE = "PHONE"
     }
+
 }

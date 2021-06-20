@@ -56,7 +56,8 @@
     <include app:graph = "@navigation/make_post_nav_graph"/>
     <include app:graph = "@navigation/nav_profile"/>
     <include app:graph = "@navigation/nav_random_profile"/>
-<!--    <include app:graph = "@navigation/nav_login"/>-->
+    <include app:graph = "@navigation/navigation_login"
+        app:startDestination="@id/fragmentLogIn"/>
 
     <action android:id="@+id/action_global_fragmentHomePage"
         app:destination="@id/fragmentHomePage"
@@ -73,11 +74,12 @@
     </action>
     <action android:id="@+id/action_global_fragmentComments"
         app:destination="@id/fragmentComments"/>
-    <action android:id="@+id/action_global_fragmentLikes" app:destination="@id/fragmentLikes" />
-    <fragment
-        android:id="@+id/fragmentLogIn"
-        android:name="com.example.memer.FRAGMENTS.FragmentLogIn"
-        android:label="fragment_log_in"
-        tools:layout="@layout/fragment_log_in" /><action android:id="@+id/action_global_fragmentLogIn" app:destination="@id/fragmentLogIn"/>
+    <action android:id="@+id/action_global_fragmentLikes"
+        app:destination="@id/fragmentLikes" />
+    <action android:id="@+id/action_global_fragmentLogIn"
+        app:destination="@id/navigation_Log_in"
+        app:launchSingleTop="false"
+        app:popUpTo="@+id/nav_graph"
+        app:popUpToInclusive="true"/>
 
 </navigation>

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.HomePageAdapter
+import com.example.memer.HELPERS.InternalStorage
 import com.example.memer.HELPERS.LoadingDialog
 import com.example.memer.NavGraphDirections
 import com.example.memer.R
@@ -73,11 +74,73 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
         }
 
         mAuth = Firebase.auth
-        initRecyclerView()
+
         requireActivity().bottomNavigationView.visibility = View.VISIBLE
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        navController = Navigation.findNavController(view)
+        val appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentHomePage))
+        binding.homePageToolbar.setupWithNavController(navController, appBarConfiguration)
+        binding.homePageToolbar.setOnMenuItemClickListener {
+            when (it.itemId) {
+                R.id.fragmentChat -> {
+                    navController.navigate(R.id.action_fragmentHomePage_to_fragmentChat)
+                    true
+                }
+                else -> false
+            }
+        }
+
+        initializeUserViewModel()
+    }
+    private fun initializeUserViewModel(): Boolean {
+
+        if (mAuth.currentUser == null) {
+            navController.navigate(R.id.action_global_fragmentLogIn)
+            Log.d(TAG, "initializeViewModel: No User Found")
+            return false
+        }
+        when {
+            viewModelUser.userLD.value != null -> {
+                Log.d(TAG, "initializeViewModel: Already Present Loading")
+                initDataAndViewModel()
+            }
+            InternalStorage.userExists(requireContext()) -> {
+                Log.d(TAG, "initializeViewModel: User Found Fetching Data")
+                loadingDialog.startLoadingDialog("Loading User Data ... ")
+                CoroutineScope(IO).launch {
+                    viewModelUser.initUser(mAuth.currentUser !!)
+                    Log.d(TAG, "initializeViewModel: Got User")
+                    withContext(Dispatchers.Main) {
+                        initDataAndViewModel()
+                        loadingDialog.dismissDialog()
+                    }
+                }
+            }
+            else -> {
+                navController.navigate(R.id.action_global_fragmentLogIn)
+                Log.d(TAG, "initializeUserViewModel: User Not Found in Internal Going back to Login")
+            }
+        }
+        return true
+    }
+    private fun initDataAndViewModel() {
+
+        initRecyclerView()
+        viewModelHomePage.postLD.observe(viewLifecycleOwner, {
+            Log.d(TAG, "onCreateView: ${it.size}")
+            homePageAdapter.submitList(it)
+            homePageAdapter.notifyDataSetChanged()
+        })
+        viewModelHomePage.getData(
+            viewModelUser.userLD.value!!.userId,
+            onCompleteListener,
+            onFailureListener
+        )
+    }
     private fun initRecyclerView() {
         val recyclerView = binding.homePageRecyclerView
         linearLayoutManager = LinearLayoutManager(context)
@@ -100,67 +163,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
                 }
             })
         }
-    }
-
-    private fun initializeViewModel(): Boolean {
-
-        if (mAuth.currentUser == null) {
-            navController.navigate(R.id.action_global_fragmentLogIn)
-            Log.d(TAG, "initializeViewModel: No User Found")
-            return false
-        }
-
-        if (viewModelUser.userLD.value == null) {
-            Log.d(TAG, "initializeViewModel: User Found Fetching Data")
-            loadingDialog.startLoadingDialog("Loading User Data ... ")
-            CoroutineScope(IO).launch {
-                viewModelUser.initializeUser()
-                Log.d(TAG, "initializeViewModel: Got User")
-                withContext(Dispatchers.Main) {
-                    initData()
-                    loadingDialog.dismissDialog()
-                }
-            }
-        } else {
-            Log.d(TAG, "initializeViewModel: Already Present Loading")
-            initData()
-        }
-        return true
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        navController = Navigation.findNavController(view)
-        val appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentHomePage))
-        binding.homePageToolbar.setupWithNavController(navController, appBarConfiguration)
-        binding.homePageToolbar.setOnMenuItemClickListener {
-            when (it.itemId) {
-                R.id.fragmentChat -> {
-                    navController.navigate(R.id.action_fragmentHomePage_to_fragmentChat)
-                    true
-                }
-                else -> false
-            }
-        }
-
-        initializeViewModel()
-
-
-    }
-
-    private fun initData() {
-
-
-        viewModelHomePage.postLD.observe(viewLifecycleOwner, {
-            Log.d(TAG, "onCreateView: ${it.size}")
-            homePageAdapter.submitList(it)
-            homePageAdapter.notifyDataSetChanged()
-        })
-        viewModelHomePage.getData(
-            viewModelUser.userLD.value!!.userId,
-            onCompleteListener,
-            onFailureListener
-        )
     }
 
     override fun onImageItemClick(position: Int) {
@@ -190,7 +192,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
         )
 
     }
-
 
     override fun onCommentClick(position: Int) {
         val action =

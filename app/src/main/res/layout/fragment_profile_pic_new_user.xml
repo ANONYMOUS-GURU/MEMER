@@ -5,10 +5,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".FRAGMENTS.FragmentProfilePic">
+    tools:context=".FRAGMENTS.FragmentProfilePicNewUser">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/updateProfilePicToolbar"
+        android:id="@+id/updateProfilePicNewUserToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/teal_200"
@@ -18,7 +18,7 @@
         app:menu="@menu/add_post_menu" />
 
     <RelativeLayout
-        android:id="@+id/updateProfilePicRelativeLayout"
+        android:id="@+id/updateProfilePicNewUserRelativeLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:orientation="vertical"
@@ -27,7 +27,7 @@
         <com.theartofdev.edmodo.cropper.CropImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/updateProfilePicCropImage"
+            android:id="@+id/updateProfilePicNewUserCropImage"
             app:cropShape="oval"
             />
 
@@ -37,7 +37,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:id="@+id/recyclerViewProfilePicGallery"
+        android:id="@+id/recyclerViewProfilePicNewUserGallery"
         tools:listitem="@layout/gallery_item_view"
         android:layout_weight="10"/>
 

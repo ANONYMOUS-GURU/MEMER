@@ -76,7 +76,8 @@ class FragmentEditProfile : Fragment(), View.OnClickListener {
             binding.editProfilePageToolbar.setupWithNavController(navController)
 
         viewModel.userLD.observe(viewLifecycleOwner, {
-            getUserData(it)
+            if(it!=null)
+                getUserData(it)
         })
 
 

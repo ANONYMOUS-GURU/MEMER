@@ -124,7 +124,7 @@ class FragmentPostPreview : Fragment(), View.OnClickListener {
         task
             .addOnSuccessListener {
                 CoroutineScope(Dispatchers.IO).launch {
-                    viewModelUser.reinitializeUser()
+                    viewModelUser.fetchAndReInitUser()
                     withContext(Dispatchers.Main) {
                         loadingDialog.dismissDialog()
                         navController.navigate(R.id.action_fragmentPostPreview_to_fragmentHomePage)

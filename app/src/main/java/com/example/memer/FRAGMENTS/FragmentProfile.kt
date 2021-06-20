@@ -93,7 +93,8 @@ class FragmentProfile : Fragment(), View.OnClickListener {
             }
         }
         viewModel.userLD.observe(viewLifecycleOwner, Observer {
-            getUserData(it)
+            if(it!=null)
+                getUserData(it)
         })
         getUserData(viewModel.userLD.value)
     }
