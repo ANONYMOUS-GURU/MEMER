@@ -55,4 +55,5 @@
     <string name="replying_to_username">Replying To Username</string>
     <string name="follow_user">Follow</string>
     <string name="this_account_is_private">This Account Is Private</string>
+    <string name="on_boarding_done">com.example.memer.OnBoardingDone</string>
 </resources>

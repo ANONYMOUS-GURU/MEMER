@@ -12,6 +12,9 @@
         <action
             android:id="@+id/action_fragmentHomePage_to_fragmentChat"
             app:destination="@id/fragmentChat" />
+        <action
+            android:id="@+id/action_fragmentHomePage_to_fragmentOnBoarding"
+            app:destination="@id/fragmentOnBoarding" />
 
     </fragment>
     <fragment
@@ -81,5 +84,9 @@
         app:launchSingleTop="false"
         app:popUpTo="@+id/nav_graph"
         app:popUpToInclusive="true"/>
+    <fragment
+        android:id="@+id/fragmentOnBoarding"
+        android:name="com.example.memer.FRAGMENTS.FragmentOnBoarding"
+        tools:layout="@layout/fragment_on_boarding" />
 
 </navigation>

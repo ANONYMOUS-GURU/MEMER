@@ -1,5 +1,6 @@
 package com.example.memer.ACTIVITY
 
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -24,30 +25,19 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate: Launched Splash Screen")
 
-
-        val firstTimeOpen = false
-        if(firstTimeOpen){
-            doFirstTimeWork()
-            val intent = Intent(this, OnBoardingActivity::class.java)
+        val user = doUserCheck()
+        if(user == null){
+            val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
-
+            finish()
         }
         else{
-            val user = doUserCheck()
-
-            if(user == null){
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
-            }
-            else{
-                val intent = Intent(this, MainActivity::class.java)
-                intent.putExtra("User",user)
-                startActivity(intent)
-            }
+            val intent = Intent(this, MainActivity::class.java)
+            intent.putExtra("User",user)                                      // TODO(CHECK THIS FLOW)
+            startActivity(intent)
             doStartUpWork()
+            finish()
         }
-
-        finish()
     }
 
     private fun doUserCheck() : UserData? {
@@ -68,10 +58,12 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private fun doStartUpWork() {
+        /*
+        * Get Posts from local Db and populate with the posts from last visit so that
+        *  screen is not empty
+        * */
     }
 
-    private fun doFirstTimeWork() {
-    }
 
     companion object{
         private const val TAG = "SplashActivity"

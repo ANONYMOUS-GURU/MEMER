@@ -1,5 +1,6 @@
 package com.example.memer.FRAGMENTS
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -73,7 +74,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
             Toast.makeText(context, "Failed ", Toast.LENGTH_SHORT).show()
         }
 
-        mAuth = Firebase.auth
+
 
         requireActivity().bottomNavigationView.visibility = View.VISIBLE
         return binding.root
@@ -81,6 +82,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        mAuth = Firebase.auth
         navController = Navigation.findNavController(view)
         val appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentHomePage))
         binding.homePageToolbar.setupWithNavController(navController, appBarConfiguration)
@@ -94,7 +96,16 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
             }
         }
 
-        initializeUserViewModel()
+        val sharedPref = requireActivity().getPreferences(Context.MODE_PRIVATE)
+        val onBoardingDone = sharedPref.getBoolean(getString(R.string.on_boarding_done), false)
+
+        if(!onBoardingDone){
+            Log.d(TAG, "onViewCreated: starting On Boarding")
+            navController.navigate(R.id.action_fragmentHomePage_to_fragmentOnBoarding)
+        }else{
+            Log.d(TAG, "onViewCreated: Error")
+            initializeUserViewModel()
+        }
     }
     private fun initializeUserViewModel() {
         when {
