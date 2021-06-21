@@ -96,40 +96,27 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
 
         initializeUserViewModel()
     }
-    private fun initializeUserViewModel(): Boolean {
-
-        if (mAuth.currentUser == null) {
-            navController.navigate(R.id.action_global_fragmentLogIn)
-            Log.d(TAG, "initializeViewModel: No User Found")
-            return false
-        }
+    private fun initializeUserViewModel() {
         when {
             viewModelUser.userLD.value != null -> {
                 Log.d(TAG, "initializeViewModel: Already Present Loading")
                 initDataAndViewModel()
             }
-            InternalStorage.userExists(requireContext()) -> {
-                Log.d(TAG, "initializeViewModel: User Found Fetching Data")
-                loadingDialog.startLoadingDialog("Loading User Data ... ")
-                CoroutineScope(IO).launch {
-                    viewModelUser.initUser(mAuth.currentUser !!)
-                    Log.d(TAG, "initializeViewModel: Got User")
-                    withContext(Dispatchers.Main) {
-                        initDataAndViewModel()
-                        loadingDialog.dismissDialog()
-                    }
-                }
+            viewModelUser.userExists() -> {
+                viewModelUser.initUser()
+                initDataAndViewModel()
             }
             else -> {
                 navController.navigate(R.id.action_global_fragmentLogIn)
                 Log.d(TAG, "initializeUserViewModel: User Not Found in Internal Going back to Login")
             }
         }
-        return true
     }
+
     private fun initDataAndViewModel() {
 
         initRecyclerView()
+        Log.d(TAG, "initDataAndViewModel: HEre")
         viewModelHomePage.postLD.observe(viewLifecycleOwner, {
             Log.d(TAG, "onCreateView: ${it.size}")
             homePageAdapter.submitList(it)
@@ -171,12 +158,10 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
         val action = NavGraphDirections.actionGlobalFragmentLikes(homePageAdapter.getPost(position).postContents)
         navController.navigate(action)
     }
-
     override fun onVideoItemClick(position: Int) {
         Toast.makeText(activity, "Clicked on video at position $position", Toast.LENGTH_SHORT)
             .show()
     }
-
     override fun onLikeClick(position: Int) {
         Log.d("FragmentHomePage", "onLikeClick $position")
 
@@ -192,13 +177,11 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
         )
 
     }
-
     override fun onCommentClick(position: Int) {
         val action =
             NavGraphDirections.actionGlobalFragmentComments(homePageAdapter.getPost(position).postContents)
         navController.navigate(action)
     }
-
     override fun onBookMarkClick(position: Int) {
         Log.d(TAG, "onBookMarkClick $position")
         viewModelHomePage.bookMarkClicked(
@@ -207,7 +190,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
             homePageAdapter.getPost(position).postContents.postOwnerId
         )
     }
-
     override fun onUserClick(position: Int) {
         // Should add to Relation User if POST_USER != USER
         if (homePageAdapter.getPost(position).postContents.postOwnerId == viewModelUser.userLD.value!!.userId) {
@@ -219,7 +201,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
             navController.navigate(action)
         }
     }
-
     override fun onMenuClick(position: Int) {
         TODO("Not yet implemented")
     }
@@ -227,7 +208,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
     override fun onClick(v: View?) {
 
     }
-
 
     companion object {
         private const val TAG = "FragmentHomePage"

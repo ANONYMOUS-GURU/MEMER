@@ -1,41 +1,38 @@
 package com.example.memer.VIEWMODELS
 
 import android.app.Application
-import android.util.Log
-import android.widget.Toast
+import android.content.Context
 import androidx.lifecycle.*
-import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.FIRESTORE.UserDb
 import com.example.memer.HELPERS.InternalStorage
-import com.example.memer.MODELS.*
-import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
-import com.example.memer.MODELS.UserData.Companion.toUserData
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.example.memer.MODELS.UserData
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.auth.User
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ViewModelUserInfo(application: Application) : AndroidViewModel(application) {
+
+class ViewModelUserInfo(initUser: UserData?, application: Application):ViewModel(){
 
     private var user: UserData? = null
     private var userMLD: MutableLiveData<UserData?> = MutableLiveData<UserData?>()
     val userLD : LiveData<UserData?>
         get() = userMLD
 
-    fun updateUser(mUser:UserData){
+    private val appContext = application
+
+    init {
+        user = initUser
+        userMLD.value  = user
+    }
+
+    fun updateUser(mUser: UserData){
         UserDb.updateUser(mUser)
         viewModelScope.launch {
-            InternalStorage.writeUser(mUser,getApplication())
+            InternalStorage.writeUser(mUser, getApplication())
 
             withContext(Dispatchers.Main){
                 user = mUser
@@ -43,11 +40,16 @@ class ViewModelUserInfo(application: Application) : AndroidViewModel(application
             }
         }
     }
-    fun updateUserImageReference(_user:Pair<String?,String?>,userId:String){
-        UserDb.updateImageReference(_user,userId)
+
+    private fun getApplication(): Context {
+        return appContext
+    }
+
+    fun updateUserImageReference(_user: Pair<String?, String?>, userId: String){
+        UserDb.updateImageReference(_user, userId)
 
         viewModelScope.launch {
-            InternalStorage.updateUserImageReference(_user.first,_user.second,getApplication())
+            InternalStorage.updateUserImageReference(_user.first, _user.second, getApplication())
 
             withContext(Dispatchers.Main){
                 user !! .userAvatarReference= _user.second
@@ -57,21 +59,15 @@ class ViewModelUserInfo(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun initUser(mUser:FirebaseUser){
+    fun initUser(){
 
         /*
          * Check if one needs to update the local user cache . Only applicable in case of non-user
          * based change of data or no connectivity for a very long time
          * */
 
-        val hasInternetConnectivity = false
         viewModelScope.launch {
-             if(hasInternetConnectivity){
-                 user = UserDb.getOldUser(mUser)
-                 InternalStorage.writeUser(user !!,getApplication())
-            }else{
-                user = InternalStorage.readUser(getApplication())
-            }
+            user = InternalStorage.readUser(getApplication())
             withContext(Dispatchers.Main){
                 userMLD.value = user
             }
@@ -81,12 +77,15 @@ class ViewModelUserInfo(application: Application) : AndroidViewModel(application
         val mUser = Firebase.auth.currentUser !!
         viewModelScope.launch {
             user = UserDb.getOldUser(mUser)
-            InternalStorage.writeUser(user !!,getApplication())
+            InternalStorage.writeUser(user!!, getApplication())
             withContext(Dispatchers.Main){
                 userMLD.value = user
             }
         }
 
+    }
+    fun userExists():Boolean{
+        return InternalStorage.userExists(getApplication())
     }
 
 
@@ -105,4 +104,14 @@ class ViewModelUserInfo(application: Application) : AndroidViewModel(application
     }
 
 
+}
+
+// TODO(REMOVE THE WARNING)
+@Suppress("UNCHECKED_CAST")
+class ViewModelUserFactory(
+    private val user: UserData?,
+    private val application: Application
+) : ViewModelProvider.NewInstanceFactory() {
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T =
+        ViewModelUserInfo(user, application) as T
 }
