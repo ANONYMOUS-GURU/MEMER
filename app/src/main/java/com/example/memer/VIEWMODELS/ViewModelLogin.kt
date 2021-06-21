@@ -134,7 +134,7 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
     }
 
     private fun updateLoginState(user: FirebaseUser, signInType: String){
-        userId = Firebase.auth.currentUser?.uid
+        userId = Firebase.auth.currentUser!!.uid
         viewModelScope.launch {
             withContext(Dispatchers.Main){
                 loginState = LoginState.LogInSuccess("", signInType, true)
@@ -144,7 +144,7 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
     }
 
     private fun writeOldUser(user: FirebaseUser, signInType: String){
-        userId = Firebase.auth.currentUser?.uid
+        userId = Firebase.auth.currentUser!!.uid
         viewModelScope.launch {
             writeUser(user)
             Log.d(TAG, "writeOldUser: Wrote Old User")

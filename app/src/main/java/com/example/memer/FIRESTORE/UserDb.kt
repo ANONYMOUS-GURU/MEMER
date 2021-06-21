@@ -69,7 +69,7 @@ object UserDb {
         val batch = db.batch()
 
         if(!doc.exists()){
-            Log.d(TAG, "addNewUser: Doc Does Not exist .. Writing New User")
+            Log.d(TAG, "addNewUser: Doc Does Not exist .. Writing New User .. userId - ${userData.userId}")
             batch.set(db.collection(USER_COLLECTION).document(userData.userId), userData)
             batch.set(
                 db.collection(USER_PUBLIC_COLLECTION).document(userData.userId),
@@ -77,12 +77,13 @@ object UserDb {
             )
         }
         else{
-            Log.d(TAG, "addNewUser: Doc exists overwriting profile params")
+            Log.d(TAG, "addNewUser: Doc exists overwriting profile  userId - ${userData.userId}")
             batch.set(db.collection(USER_COLLECTION).document(userData.userId), userData.toUserEditInfo(),
                 SetOptions.merge())
             batch.set(
                 db.collection(USER_PUBLIC_COLLECTION).document(userData.userId),
-                userData.toUserEditInfo()
+                userData.toUserEditInfo(),
+                SetOptions.merge()
             )
         }
         batch.commit().await()
@@ -94,13 +95,13 @@ object UserDb {
         val db = FirebaseFirestore.getInstance()
         return db.collection(USER_COLLECTION).document(mUser.uid).get().await().toUserData() !!
     }
-
     // TODO(ONLY NEEDS AUTH CHECK)
     suspend fun getRandomUser(userId: String): UserProfileInfo {
         val db = FirebaseFirestore.getInstance()
         return db.collection(USER_PUBLIC_COLLECTION).document(userId).get().await()
             .toUserProfileInfo()
     }
+
 
     suspend fun isFollowing(
         currUser: String,
