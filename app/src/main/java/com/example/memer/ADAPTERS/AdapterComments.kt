@@ -22,7 +22,8 @@ import kotlin.math.abs
 
 class AdapterComments(
     private val itemClickListener: ItemClickListener,
-    private val mContext: Context
+    private val mContext: Context,
+    private val userId:String,
 ) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -33,7 +34,8 @@ class AdapterComments(
             LayoutInflater.from(parent.context)
                 .inflate(R.layout.comment_single_view, parent, false),
             itemClickListener,
-            mContext
+            mContext,
+            userId
         )
     }
 
@@ -52,16 +54,15 @@ class AdapterComments(
     fun submitList(commentList: ArrayList<Pair<Comment,ArrayList<Comment>>>) {
         items = commentList
     }
-    fun getUserId(position: Int,parentPosition:Int = -1):String{
-        if(parentPosition == -1)
-            return items[position].first.commentOwnerId
-        else
-            return items[parentPosition].second[position].commentOwnerId
-    }
     fun getUsername(position: Int):String{
         return items[position].first.commentOwnerUsername
     }
-
+    fun getComment(position: Int,parentPosition: Int = -1):Comment{
+        return if(parentPosition == -1) items[position].first else items[parentPosition].second[position]
+    }
+    fun getParentComment(position: Int,parentIndex: Int = -1):Comment{
+        return if(parentIndex == -1) items[position].first else items[parentIndex].first
+    }
     fun getCommentParentId(position: Int):String{
         return items[position].first.commentId
     }
@@ -70,7 +71,8 @@ class AdapterComments(
         itemView: View,
         private val itemClickListener: ItemClickListener,
         private val mContext: Context,
-    ) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        private val userId: String
+    ) : RecyclerView.ViewHolder(itemView), View.OnClickListener , View.OnLongClickListener {
 
         private val username: TextView = itemView.commentRootView.usernameComment
         private val userAvatar: ImageView = itemView.commentRootView.userAvatarComment
@@ -96,7 +98,7 @@ class AdapterComments(
 
                 repliesRecyclerView.visibility = View.VISIBLE
 
-                mAdapter = AdapterReplies(itemClickListener, mContext)
+                mAdapter = AdapterReplies(itemClickListener, mContext,userId)
                 mAdapter.submitList(replyList)
                 mAdapter.submitIndex(absoluteAdapterPosition)
 
@@ -130,6 +132,10 @@ class AdapterComments(
             userAvatar.setOnClickListener(this)
             username.setOnClickListener(this)
             reply.setOnClickListener(this)
+
+            if(comment.commentOwnerId == userId){
+                commentContent.setOnLongClickListener(this)
+            }
         }
 
         private fun getTime(date: Date?): String {
@@ -147,6 +153,19 @@ class AdapterComments(
                 }
             }
         }
+
+        override fun onLongClick(v: View?): Boolean {
+            if (v != null) {
+                return when (v.id) {
+                    commentContent.id -> {
+                        itemClickListener.onEditComment(absoluteAdapterPosition)
+                        true
+                    }
+                    else -> false
+                }
+            }
+            return false
+        }
     }
 
     interface ItemClickListener {
@@ -154,13 +173,15 @@ class AdapterComments(
         fun onUserClick(position: Int,parentIndex:Int = -1)
         fun onReplyClick(position: Int,parentIndex:Int = -1)
         fun onShowReplies(position: Int,parentIndex:Int = -1)
+        fun onEditComment(position: Int,parentIndex: Int = -1)
     }
 }
 
 
 class AdapterReplies(
     private val itemClickListener: AdapterComments.ItemClickListener,
-    private val mContext: Context
+    private val mContext: Context,
+    private val userId: String
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var items: ArrayList<Comment> = ArrayList()
@@ -171,7 +192,8 @@ class AdapterReplies(
             LayoutInflater.from(parent.context)
                 .inflate(R.layout.single_comment_only_view, parent, false),
             itemClickListener,
-            mContext,indexOriginalList
+            mContext,indexOriginalList,
+            userId
         )
     }
 
@@ -199,8 +221,9 @@ class AdapterReplies(
         itemView: View,
         private val itemClickListener: AdapterComments.ItemClickListener,
         private val mContext: Context,
-        private val commentParentIndex:Int
-    ) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        private val commentParentIndex:Int,
+        private val userId: String
+    ) : RecyclerView.ViewHolder(itemView), View.OnClickListener , View.OnLongClickListener {
 
         private val username: TextView = itemView.usernameComment
         private val userAvatar: ImageView = itemView.userAvatarComment
@@ -229,6 +252,10 @@ class AdapterReplies(
             userAvatar.setOnClickListener(this)
             username.setOnClickListener(this)
             reply.setOnClickListener(this)
+            if(comment.commentOwnerId == userId){
+                commentContent.setOnLongClickListener(this)
+            }
+
         }
 
         private fun getTime(date: Date?): String {
@@ -244,6 +271,19 @@ class AdapterReplies(
                     reply.id -> itemClickListener.onReplyClick(absoluteAdapterPosition,commentParentIndex)
                 }
             }
+        }
+
+        override fun onLongClick(v: View?): Boolean {
+            if (v != null) {
+                return when (v.id) {
+                    commentContent.id -> {
+                        itemClickListener.onEditComment(absoluteAdapterPosition,commentParentIndex)
+                        true
+                    }
+                    else -> false
+                }
+            }
+            return false
         }
     }
 

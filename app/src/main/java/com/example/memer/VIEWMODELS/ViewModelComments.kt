@@ -4,6 +4,7 @@ import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.MODELS.Comment
 import com.example.memer.MODELS.Comment.Companion.toComment
+import com.example.memer.MODELS.CommentState
 import com.example.memer.MODELS.PostContents2
 import com.example.memer.MODELS.UserData
 import com.google.firebase.firestore.DocumentSnapshot
@@ -25,9 +26,14 @@ class ViewModelComments(private val post: PostContents2) : ViewModel() {
     private val lastSnapshot: DocumentSnapshot? = null
     private val docLimitComments = 15L
 
+    private var commentState:CommentState = CommentState.Default
+    private val commentStateMLD = MutableLiveData<CommentState>()
+    val commentStateLD:LiveData<CommentState>
+        get() = commentStateMLD
 
     init {
         getComments()
+        commentStateMLD.value = commentState
     }
 
     // TODO(Implement get more in this -- NOT YET DONE as moreDataPresent not defined define and initialize acc. see VMLikes)
@@ -103,6 +109,39 @@ class ViewModelComments(private val post: PostContents2) : ViewModel() {
                 dataMLD.value = data
             }
         }
+    }
+
+    fun editComment(
+        postId: String,
+        userId: String,
+        postOwnerId: String,
+        commentContent: String,
+        commentParentId: String? = null,
+        commentId:String,
+        parentPosition: Int,
+        position: Int
+    ){
+        PostDb.editComment(postId, userId, postOwnerId, commentContent, commentParentId, commentId)
+        if(commentParentId == null){
+            data[position].first.commentContent = commentContent
+        }else{
+            data[parentPosition].second[position].commentContent = commentContent
+        }
+        dataMLD.value = data
+    }
+
+
+    fun onReplyClick(userId: String,username:String,commentParentId: String,parentIndex:Int){
+        commentState = CommentState.ReplyTo(userId,username,commentParentId,parentIndex)
+        commentStateMLD.value = commentState
+    }
+    fun onEditClick(position:Int,parentIndex:Int){
+        commentState = CommentState.Edit(position,parentIndex)
+        commentStateMLD.value = commentState
+    }
+    fun makeCommentDefault(){
+        commentState = CommentState.Default
+        commentStateMLD.value = commentState
     }
 
 }

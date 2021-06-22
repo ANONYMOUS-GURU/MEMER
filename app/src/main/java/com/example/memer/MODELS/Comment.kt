@@ -1,15 +1,12 @@
 package com.example.memer.MODELS
 
-import android.os.Parcelable
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ServerTimestamp
-import kotlinx.android.parcel.Parcelize
 import java.util.*
 
 data class Comment(
     val commentId:String,
-    val commentContent:String,
+    var commentContent:String,
     val commentParentId:String?,
 
     val commentOwnerId:String,
@@ -38,4 +35,9 @@ data class Comment(
             )
         }
     }
+}
+sealed class CommentState{
+    object Default:CommentState()
+    data class Edit(val position:Int,val parentIndex:Int):CommentState()
+    data class ReplyTo(val userId:String,val username:String,val commentParentId: String,val parentIndex:Int):CommentState()
 }

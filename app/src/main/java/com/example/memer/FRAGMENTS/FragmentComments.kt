@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.memer.ADAPTERS.AdapterComments
+import com.example.memer.MODELS.CommentState
 import com.example.memer.MODELS.PostContents2
 import com.example.memer.NavGraphDirections
 import com.example.memer.R
@@ -36,8 +37,8 @@ class FragmentComments : Fragment() , AdapterComments.ItemClickListener , View.O
     private lateinit var mAdapter: AdapterComments
     private lateinit var navController: NavController
     private val viewModelUser:ViewModelUserInfo by activityViewModels()
-    private var parentPosition : Int = -1
-    private var commentParentId :String = ""
+//    private var parentPosition : Int = -1
+//    private var commentParentId :String = ""
 
     private val args:FragmentCommentsArgs by navArgs()
     private lateinit var post:PostContents2
@@ -46,16 +47,6 @@ class FragmentComments : Fragment() , AdapterComments.ItemClickListener , View.O
 
 
 
-    private fun initViewModel(){
-        post = args.post
-        viewModel = ViewModelProvider(this, ViewModelCommentsFactory(post)).get(ViewModelComments::class.java)
-
-        viewModel.dataLD.observe(viewLifecycleOwner, {
-            Log.d(TAG, "onViewCreated: Fired Comment ViewHolder")
-            mAdapter.submitList(it)
-            mAdapter.notifyDataSetChanged()
-        })
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -86,7 +77,7 @@ class FragmentComments : Fragment() , AdapterComments.ItemClickListener , View.O
     private fun initRecyclerView(){
         val recyclerView = binding.recyclerViewCommentsPage
         linearLayoutManager = LinearLayoutManager(context)
-        mAdapter = AdapterComments(this, requireActivity())
+        mAdapter = AdapterComments(this, requireActivity(),viewModelUser.userLD.value !! .userId)
 
         recyclerView.apply {
             layoutManager = linearLayoutManager
@@ -98,36 +89,54 @@ class FragmentComments : Fragment() , AdapterComments.ItemClickListener , View.O
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController= Navigation.findNavController(view)
-
         initViewModel()
-
         binding.commentPageToolbar.setupWithNavController(navController)
+    }
+    private fun initViewModel(){
+        post = args.post
+        viewModel = ViewModelProvider(this, ViewModelCommentsFactory(post)).get(ViewModelComments::class.java)
 
+        viewModel.dataLD.observe(viewLifecycleOwner, {
+            Log.d(TAG, "onViewCreated: Fired Comment ViewHolder")
+            mAdapter.submitList(it)
+            mAdapter.notifyDataSetChanged()
+        })
+        viewModel.commentStateLD.observe(viewLifecycleOwner,{
+            when(it){
+                is CommentState.ReplyTo -> {onReply(it.userId,it.username,it.commentParentId,it.parentIndex)}
+                is CommentState.Default -> {reset()}
+                is CommentState.Edit -> {onEdit(it.position,it.parentIndex)}
+            }
+        })
+    }
+
+    private fun reset(){
+        binding.userCommentEditText.setText("")
+        binding.replyingToTextView.text = ""
+        binding.replyingToTextViewLinearLayout.visibility = View.GONE
     }
     override fun onClick(v: View?) {
         when (v?.id){
             binding.submitComment.id -> {
                 val str = binding.userCommentEditText.text.toString()
+                val commentState = viewModel.commentStateLD.value !!
                 if (str.isNotEmpty()) {
-                    if (parentPosition  == -1 || commentParentId.isEmpty()) {
-                        viewModel.addCommentPost(post, viewModelUser.userLD.value, str)
-                    } else {
-                        viewModel.addCommentPost(post, viewModelUser.userLD.value, str, commentParentId,parentPosition)
+                    when(commentState){
+                        is CommentState.Default -> viewModel.addCommentPost(post, viewModelUser.userLD.value !!, str)
+                        is CommentState.ReplyTo -> viewModel.addCommentPost(post, viewModelUser.userLD.value !!, str, commentState.commentParentId,commentState.parentIndex)
+                        is CommentState.Edit -> {
+                            val comment = mAdapter.getComment(commentState.position,commentState.parentIndex)
+                            viewModel.editComment(post.postId,viewModelUser.userLD.value!!.userId,post.postOwnerId,
+                                str,comment.commentParentId,comment.commentId,commentState.parentIndex,commentState.position)
+                        }
                     }
-                    binding.userCommentEditText.setText("")
-                    binding.replyingToTextView.text = ""
-                    parentPosition = -1
-                    binding.replyingToTextViewLinearLayout.visibility = View.GONE
-                    commentParentId = ""
+                    viewModel.makeCommentDefault()
                 } else {
                     Toast.makeText(context, "Add Comment Body", Toast.LENGTH_SHORT).show()
                 }
             }
             binding.closeReplyIcon.id -> {
-                binding.replyingToTextView.text = ""
-                binding.replyingToTextViewLinearLayout.visibility =View.GONE
-                parentPosition = -1
-                commentParentId = ""
+                viewModel.makeCommentDefault()
             }
         }
     }
@@ -136,42 +145,39 @@ class FragmentComments : Fragment() , AdapterComments.ItemClickListener , View.O
         TODO("Not yet implemented")
     }
     override fun onUserClick(position: Int, parentIndex: Int) {
-        if(parentIndex == -1){
-            if(mAdapter.getUserId(position) == viewModelUser.userLD.value !!. userId)
-                navController.navigate(R.id.action_global_fragmentProfile)
-            else{
-                val action  = NavGraphDirections.actionGlobalFragmentRandomUserProfile(mAdapter.getUserId(position))
-                navController.navigate(action)
-            }
-        }
+        val comment =  mAdapter.getComment(position, parentIndex)
+        if(comment.commentOwnerId == viewModelUser.userLD.value !!. userId)
+            navController.navigate(R.id.action_global_fragmentProfile)
         else{
-            if(mAdapter.getUserId(parentIndex) == viewModelUser.userLD.value !!. userId)
-                navController.navigate(R.id.action_global_fragmentProfile)
-            else{
-                val action  = NavGraphDirections.actionGlobalFragmentRandomUserProfile(mAdapter.getUserId(position))
-                navController.navigate(action)
-            }
+            val action  = NavGraphDirections.actionGlobalFragmentRandomUserProfile(comment.commentOwnerId)
+            navController.navigate(action)
         }
+    }
+    override fun onReplyClick(position: Int, parentIndex: Int) {
+        val comment = mAdapter.getParentComment(position,parentIndex)
+        viewModel.onReplyClick(comment.commentOwnerId,comment.commentOwnerUsername,comment.commentId,if(parentIndex == -1) position else parentIndex)
     }
     @SuppressLint("SetTextI18n")
-    override fun onReplyClick(position: Int, parentIndex: Int) {
+    private fun onReply(userId:String,username:String,commentParentId: String,parentIndex: Int){
         binding.replyingToTextViewLinearLayout.visibility = View.VISIBLE
-        if(parentIndex == -1){
-            binding.replyingToTextView.text = "Replying To ${mAdapter.getUsername(position)}"
-            parentPosition = position
-            commentParentId = mAdapter.getCommentParentId(position)
-        }
-        else{
-            binding.replyingToTextView.text = "Replying To ${mAdapter.getUsername(parentIndex)}"
-            parentPosition = parentIndex
-            commentParentId = mAdapter.getCommentParentId(parentIndex)
-        }
-        Log.d(TAG, "onReplyClick: $parentPosition")
+        binding.replyingToTextView.text = "Replying To $username"
         binding.userCommentEditText.requestFocus()
     }
+
     override fun onShowReplies(position: Int, parentIndex: Int) {
         viewModel.getCommentsReplies(post.postId , mAdapter.getCommentParentId(position),position)
     }
+    override fun onEditComment(position: Int, parentIndex: Int) {
+        viewModel.onEditClick(position,parentIndex)
+    }
+    private fun onEdit(position: Int,parentIndex: Int){
+        val comment = mAdapter.getComment(position,parentIndex)
+        binding.userCommentEditText.setText(comment.commentContent)
+        binding.userCommentEditText.requestFocus()
+        binding.replyingToTextViewLinearLayout.visibility = View.VISIBLE
+        binding.replyingToTextView.text = getString(R.string.editing_comment)
+    }
+
 
     companion object{
         private const val TAG = "FragmentComments"

@@ -291,29 +291,27 @@ object PostDb {
         val db = FirebaseFirestore.getInstance()
         val batch = db.batch()
 
-        batch.set(
+        batch.update(
             db.collection(USER_COLLECTION).document(userId).collection(                     // TODO(THIS WRITE TRIGGERS EVERY OTHER WRITE IN DB USING CLOUD FUNCTIONS)
                 USER_RELATION_COLLECTION
-            ).document(postOwnerId).collection(COMMENTS_COLLECTION).document(postId),
-            hashMapOf("$commentId.commentContent" to commentContent), SetOptions.merge()
+            ).document(postOwnerId).collection(COMMENTS_COLLECTION).document(postId), "$commentId.commentContent" , commentContent
         )
 
         if (commentParentId == null) {
-            batch.set(
+            batch.update(
                 db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                    .document(commentId), hashMapOf("commentContent" to commentContent),
-                SetOptions.merge()
+                    .document(commentId), "commentContent" , commentContent
+
             )
         } else {
-            batch.set(
+            batch.update(
                 db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
                     .document(commentParentId)
                     .collection(COMMENT_REPLY_COLLECTION).document(commentId),
-                hashMapOf("commentContent" to commentContent),
-                SetOptions.merge()
+                "commentContent" , commentContent
             )
         }
-
+        Log.d(TAG, "editComment: Ran")
         batch.commit()
     }
 
