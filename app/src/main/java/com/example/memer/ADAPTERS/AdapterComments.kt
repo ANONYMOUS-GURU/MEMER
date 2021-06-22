@@ -82,6 +82,7 @@ class AdapterComments(
         private val likeComment: ImageView = itemView.commentRootView.likeComment
         private val showReplies: TextView = itemView.showComments
         private val repliesRecyclerView: RecyclerView = itemView.replyRecyclerView
+        private val commentRootView:View = itemView.commentRootView
 
         private lateinit var mAdapter: AdapterReplies
 
@@ -134,7 +135,7 @@ class AdapterComments(
             reply.setOnClickListener(this)
 
             if(comment.commentOwnerId == userId){
-                commentContent.setOnLongClickListener(this)
+                commentRootView.setOnLongClickListener(this)
             }
         }
 
@@ -157,7 +158,7 @@ class AdapterComments(
         override fun onLongClick(v: View?): Boolean {
             if (v != null) {
                 return when (v.id) {
-                    commentContent.id -> {
+                    commentRootView.id -> {
                         itemClickListener.onEditComment(absoluteAdapterPosition)
                         true
                     }
@@ -232,6 +233,7 @@ class AdapterReplies(
         private val timeComment: TextView = itemView.timeComment
         private val likeComment: ImageView = itemView.likeComment
 
+
         fun bind(comment: Comment) {
             username.text = comment.commentOwnerUsername  // TODO(CHANGE NAME)
             commentContent.text = comment.commentContent
@@ -253,7 +255,7 @@ class AdapterReplies(
             username.setOnClickListener(this)
             reply.setOnClickListener(this)
             if(comment.commentOwnerId == userId){
-                commentContent.setOnLongClickListener(this)
+                itemView.setOnLongClickListener(this)
             }
 
         }
@@ -276,7 +278,7 @@ class AdapterReplies(
         override fun onLongClick(v: View?): Boolean {
             if (v != null) {
                 return when (v.id) {
-                    commentContent.id -> {
+                    itemView.id -> {
                         itemClickListener.onEditComment(absoluteAdapterPosition,commentParentIndex)
                         true
                     }
