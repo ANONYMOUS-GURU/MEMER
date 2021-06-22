@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/savePost"
+        android:icon="@drawable/message_icon"
+        android:title="@string/archive"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/sharePost"
+        android:icon="@drawable/message_icon"
+        android:title="@string/share"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/copyLinkPost"
+        android:icon="@drawable/message_icon"
+        android:title="@string/copy_link"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/reportPost"
+        android:icon="@drawable/message_icon"
+        android:title="@string/report"
+        app:showAsAction="never" />
+
+
+
+</menu>

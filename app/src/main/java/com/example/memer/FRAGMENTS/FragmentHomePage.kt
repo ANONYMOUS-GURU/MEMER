@@ -4,8 +4,10 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -40,7 +42,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
-class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnClickListener {
+class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageAdapter.OnMenuClickListener,
+    View.OnClickListener {
 
     private lateinit var binding: FragmentHomePageBinding
     private lateinit var linearLayoutManager: LinearLayoutManager
@@ -48,6 +51,9 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
     private lateinit var loadingDialog: LoadingDialog
     private lateinit var mAuth: FirebaseAuth
     private lateinit var navController: NavController
+
+
+
     private val viewModelHomePage: ViewModelHomePagePost by viewModels()
     private val viewModelUser: ViewModelUserInfo by activityViewModels()
 
@@ -125,7 +131,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
     }
 
     private fun initDataAndViewModel() {
-
         initRecyclerView()
         Log.d(TAG, "initDataAndViewModel: HEre")
         viewModelHomePage.postLD.observe(viewLifecycleOwner, {
@@ -142,7 +147,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
     private fun initRecyclerView() {
         val recyclerView = binding.homePageRecyclerView
         linearLayoutManager = LinearLayoutManager(context)
-        homePageAdapter = HomePageAdapter(this, requireActivity())
+        homePageAdapter = HomePageAdapter(this, this,requireActivity(),viewModelUser.userLD.value !! .userId)
 
         recyclerView.apply {
             layoutManager = linearLayoutManager
@@ -212,9 +217,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
             navController.navigate(action)
         }
     }
-    override fun onMenuClick(position: Int) {
-        TODO("Not yet implemented")
-    }
+
 
     override fun onClick(v: View?) {
 
@@ -223,5 +226,30 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener, View.OnC
     companion object {
         private const val TAG = "FragmentHomePage"
     }
+
+    override fun sharePostClick(position: Int) {
+        Log.d(TAG, "sharePostClick: Share")
+    }
+
+    override fun editPostClick(position: Int) {
+        Log.d(TAG, "editPostClick: Edit")
+    }
+
+    override fun deletePostClick(position: Int) {
+        Log.d(TAG, "deletePostClick: Delete")
+    }
+
+    override fun copyLinkPostClick(position: Int) {
+        Log.d(TAG, "copyLinkPostClick: Copy Link")
+    }
+
+    override fun reportPostClick(position: Int) {
+        Log.d(TAG, "reportPostClick: Report")
+    }
+
+    override fun savePostClick(position: Int) {
+        Log.d(TAG, "savePostClick: Save")
+    }
+
 
 }
