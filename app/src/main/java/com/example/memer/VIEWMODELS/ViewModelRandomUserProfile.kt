@@ -1,11 +1,11 @@
 package com.example.memer.VIEWMODELS
 
-import android.util.Log
 import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.FIRESTORE.UserDb
 import com.example.memer.MODELS.PostContents2
 import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
+import com.example.memer.MODELS.PostHomePage
 import com.example.memer.MODELS.UserProfileInfo
 import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +14,6 @@ import kotlinx.coroutines.withContext
 
 class ViewModelRandomUserProfile(private val userId: String, private val randomUserId: String) :
     ViewModel() {
-
 
     private lateinit var data: UserProfileInfo
     private val dataMLD: MutableLiveData<UserProfileInfo> = MutableLiveData()
@@ -26,6 +25,10 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
     val postLD: LiveData<ArrayList<PostContents2>>
         get() = postMLD
 
+    private var postComplete: ArrayList<PostHomePage> = ArrayList()
+    private val postCompleteMLD: MutableLiveData<ArrayList<PostHomePage>> = MutableLiveData()
+    val postCompleteLD: LiveData<ArrayList<PostHomePage>>
+        get() = postCompleteMLD
 
     private var isFollowing: Boolean = false
     private val isFollowingMLD: MutableLiveData<Boolean> = MutableLiveData()
@@ -40,26 +43,32 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
         viewModelScope.launch {
             data = UserDb.getRandomUser(randomUserId)
             isFollowing = UserDb.isFollowing(userId, randomUserId)
+            withContext(Dispatchers.Main) {
+                dataMLD.value = data
+                isFollowingMLD.value = isFollowing
+            }
+            getInitPosts()
+        }
+    }
+
+    private fun getInitPosts() {
+        viewModelScope.launch {
             val docs: ArrayList<DocumentSnapshot> = if (isFollowing) {
                 PostDb.getUserPosts(randomUserId, docLimit, lastPostDocumentSnapshot)
             } else {
                 PostDb.getPublicPosts(randomUserId, docLimit, lastPostDocumentSnapshot)
             }
-            Log.d(TAG, "init: ${docs.size}")
             moreDataPresent = docs.size >= docLimit
             lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
             docs.forEach {
                 post.add(it.toPostContents2())
             }
             withContext(Dispatchers.Main) {
-                dataMLD.value = data
                 postMLD.value = post
-                isFollowingMLD.value = isFollowing
             }
         }
     }
-
-    fun getPosts() {
+    fun getMorePosts(){
         viewModelScope.launch {
             val docs: ArrayList<DocumentSnapshot> = if (isFollowing) {
                 PostDb.getUserPosts(randomUserId, docLimit, lastPostDocumentSnapshot)
@@ -77,6 +86,107 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
         }
     }
 
+    fun initListPost(userId: String) {
+        postComplete = ArrayList()
+        viewModelScope.launch {
+            post.forEach {
+                val userLike = PostDb.getUserLikes(
+                    it.postId,
+                    userId,
+                    it.postOwnerId
+                )
+                // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
+                val userBookMark = PostDb.getUserBookMarks(
+                    it.postId,
+                    userId,
+                    it.postOwnerId
+                )
+                postComplete.add(
+                    PostHomePage(
+                        postContents = it,
+                        isLiked = userLike,
+                        isCommented = false,
+                        isBookmarked = userBookMark
+                    )
+                )
+            }
+            withContext(Dispatchers.Main) {
+                postCompleteMLD.value = postComplete
+            }
+
+        }
+
+    }
+    fun getMoreListPost(userId: String) {
+        viewModelScope.launch {
+            val docs = PostDb.getPostsUsers(lastPostDocumentSnapshot, docLimit, userId)
+            moreDataPresent = docs.size >= docLimit
+            docs.forEach {
+                post.add(it.toPostContents2())
+                val userLike = PostDb.getUserLikes(
+                    it.getString("postId")!!,
+                    userId,
+                    it.getString("postOwnerId")!!
+                )
+                // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
+                val userBookMark = PostDb.getUserBookMarks(
+                    it.getString("postId")!!,
+                    userId,
+                    it.getString("postOwnerId")!!
+                )
+                postComplete.add(
+                    PostHomePage(
+                        postContents = it.toPostContents2(),
+                        isLiked = userLike,
+                        isCommented = false,
+                        isBookmarked = userBookMark
+                    )
+                )
+            }
+            withContext(Dispatchers.Main) {
+                postMLD.value = post
+                postCompleteMLD.value = postComplete
+            }
+        }
+    }
+
+    fun likeClicked(
+        position: Int,
+        postId: String,
+        userId: String,
+        username: String,
+        userAvatarReference: String?,
+        nameOfUser:String,
+        postOwnerId: String,
+        incrementLike: Boolean
+    ) {
+//        val likes = LikedBy(username,userAvatarReference,userId,1,postId,postOwnerId,null)
+        PostDb.updateLikesPost(
+            postId,
+            postOwnerId,
+            userId,
+            username,
+            userAvatarReference,
+            nameOfUser,
+            incrementLike
+        )
+
+        postComplete[position].isLiked = postComplete[position].isLiked + if (incrementLike) 1 else -1
+        postCompleteMLD.value = postComplete
+    }
+
+    fun bookMarkClicked(position: Int, userId: String, postId: String, postOwnerId: String) {
+
+        if (postComplete[position].isBookmarked) {
+            postComplete[position].isBookmarked = false
+            PostDb.bookMarkPost(userId,postId,postOwnerId,true)
+        } else {
+            postComplete[position].isBookmarked = true
+            PostDb.bookMarkPost(userId,postId,postOwnerId,false)
+        }
+
+        postCompleteMLD.value = postComplete
+    }
 
     fun followUser() {
         if (isFollowing) {

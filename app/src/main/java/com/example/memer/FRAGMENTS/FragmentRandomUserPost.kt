@@ -6,22 +6,18 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
+import androidx.navigation.NavController
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
-import com.example.memer.ADAPTERS.AdapterFragmentYourPosts
+import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.AdapterRandomUserPostImage
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelRandomUserProfile
-import com.example.memer.VIEWMODELS.ViewModelRandomUserProfileFactory
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
-import com.example.memer.VIEWMODELS.ViewModelUserPost
-import com.example.memer.databinding.FragmentProfileContainerBinding
 import com.example.memer.databinding.FragmentRandomUserPostBinding
-import com.example.memer.databinding.FragmentRandomUserProfileBinding
 
 class FragmentRandomUserPost : Fragment() , AdapterRandomUserPostImage.ItemClickListener{
 
@@ -30,6 +26,7 @@ class FragmentRandomUserPost : Fragment() , AdapterRandomUserPostImage.ItemClick
     private lateinit var mAdapter: AdapterRandomUserPostImage
     private val viewModelPost: ViewModelRandomUserProfile by navGraphViewModels(R.id.nav_random_profile)
     private val viewModelUser: ViewModelUserInfo by activityViewModels()
+    private lateinit var navController: NavController
 
     companion object{
         private const val TAG = "FragmentRandomUserPost"
@@ -56,11 +53,20 @@ class FragmentRandomUserPost : Fragment() , AdapterRandomUserPostImage.ItemClick
             layoutManager = gridLayoutManager
             itemAnimator = DefaultItemAnimator()
             adapter = mAdapter
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    if (viewModelPost.moreDataPresent && !recyclerView.canScrollVertically(1) && newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        viewModelPost.getMorePosts()
+                    }
+                }
+            })
         }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        navController = requireParentFragment().findNavController()
         viewModelPost.postLD.observe(viewLifecycleOwner, {
             mAdapter.submitList(it)
             mAdapter.notifyDataSetChanged()
@@ -68,9 +74,7 @@ class FragmentRandomUserPost : Fragment() , AdapterRandomUserPostImage.ItemClick
 
     }
     override fun onItemClick(position: Int) {
-        Toast.makeText(context,"Clicked Your Posts at $position", Toast.LENGTH_SHORT).show()
-//        val postId =position+1
-//        viewModel.deletePosts("7",postId.toString())
+        navController.navigate(R.id.action_fragmentRandomUserProfile_to_fragmentPostListRandom)
     }
 
 

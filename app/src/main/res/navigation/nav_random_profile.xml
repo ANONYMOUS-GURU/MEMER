@@ -16,6 +16,9 @@
         <argument
             android:name="randomUserId"
             app:argType="string" />
+        <action
+            android:id="@+id/action_fragmentRandomUserProfile_to_fragmentPostListRandom"
+            app:destination="@id/fragmentPostListRandom" />
 
     </fragment>
 
@@ -24,6 +27,10 @@
         android:name="com.example.memer.FRAGMENTS.FragmentRandomUserPost"
         android:label="fragment_random_user_post"
         tools:layout="@layout/fragment_random_user_post" />
+    <fragment
+        android:id="@+id/fragmentPostListRandom"
+        android:name="com.example.memer.FRAGMENTS.FragmentPostListRandom"
+        tools:layout="@layout/fragment_post_list_random" />
 
 
 </navigation>

@@ -122,9 +122,7 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         navController = Navigation.findNavController(view)
-
         viewModelRandomUser.dataLD.observe(viewLifecycleOwner,{
             initView(it)
         })

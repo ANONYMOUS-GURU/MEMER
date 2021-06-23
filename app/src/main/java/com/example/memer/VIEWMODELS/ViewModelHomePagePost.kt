@@ -1,13 +1,12 @@
 package com.example.memer.VIEWMODELS
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
 import com.example.memer.MODELS.PostHomePage
+import com.example.memer.MODELS.UserData
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.firebase.firestore.DocumentSnapshot
@@ -16,7 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ViewModelHomePagePost : ViewModel() {
+class ViewModelHomePagePost(userId: String) : ViewModel() {
 
     private var post: ArrayList<PostHomePage> = ArrayList()
     private var postMLD: MutableLiveData<ArrayList<PostHomePage>> =
@@ -25,78 +24,61 @@ class ViewModelHomePagePost : ViewModel() {
         get() = postMLD
 
     var moreDataPresent: Boolean = true
-    private var retVal: ArrayList<DocumentSnapshot> = ArrayList()
     private val docLimit: Long = 5
     private var lastDocumentSnapshot: DocumentSnapshot? = null
 
-    fun getData(
-        userId: String,
-        onCompleteListener: OnCompleteListener<QuerySnapshot>,
-        onFailureListener: OnFailureListener
-    ) {
-        lastDocumentSnapshot = null
+    init{
+        getData(userId)
+    }
+
+    private fun getData(userId: String) {
         post = ArrayList()
         viewModelScope.launch {
-            retVal = PostDb.getPosts(
-                lastDocumentSnapshot,
-                docLimit,
-                onCompleteListener,
-                onFailureListener
-            )
-            if (retVal.size > 0) {
-                Log.d(TAG, "getData: Got Data")
-                moreDataPresent = retVal.size >= docLimit
-                lastDocumentSnapshot = retVal[retVal.size - 1]
-                retVal.forEach {
-                    val userLike = PostDb.getUserLikes(
-                        it.getString("postId")!!,
-                        userId,
-                        it.getString("postOwnerId")!!
-                    )
+            val doc = PostDb.getPosts(lastDocumentSnapshot, docLimit,userId)
 
-                    // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
-                    val userBookMark = PostDb.getUserBookMarks(
-                        it.getString("postId")!!,
-                        userId,
-                        it.getString("postOwnerId")!!
+            Log.d(TAG, "getData: Got Data")
+            moreDataPresent = doc.size >= docLimit
+            lastDocumentSnapshot = if(doc.size>0) doc[doc.size - 1] else null
+            doc.forEach {
+                val userLike = PostDb.getUserLikes(
+                    it.getString("postId")!!,
+                    userId,
+                    it.getString("postOwnerId")!!
+                )
+                // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
+                val userBookMark = PostDb.getUserBookMarks(
+                    it.getString("postId")!!,
+                    userId,
+                    it.getString("postOwnerId")!!
+                )
+                post.add(
+                    PostHomePage(
+                        postContents = it.toPostContents2(),
+                        isLiked = userLike,
+                        isCommented = false,
+                        isBookmarked = userBookMark
                     )
-                    Log.d(TAG, "getData: converting")
-                    post.add(
-                        PostHomePage(
-                            postContents = it.toPostContents2(),
-                            isLiked = userLike,
-                            isCommented = false,
-                            isBookmarked = userBookMark
-                        )
-                    )
-                }
-                withContext(Dispatchers.Main) {
-                    Log.d(TAG, "getData: updating")
-                    postMLD.value = post
-                }
-            }else{
-                moreDataPresent = false
+                )
             }
-
+            withContext(Dispatchers.Main) {
+                Log.d(TAG, "getData: updating")
+                postMLD.value = post
+            }
 
         }
     }
 
-    fun getMoreData(
-        userId: String,
-        onCompleteListener: OnCompleteListener<QuerySnapshot>,
-        onFailureListener: OnFailureListener
-    ) {
+
+    fun getMoreData(userId: String) {
         viewModelScope.launch {
-            retVal = PostDb.getPosts(
+            val doc = PostDb.getPosts(
                 lastDocumentSnapshot,
                 docLimit,
-                onCompleteListener,
-                onFailureListener
+                userId
             )
-            lastDocumentSnapshot = retVal[retVal.size - 1]
-            moreDataPresent = retVal.size >= docLimit
-            retVal.forEach {
+            lastDocumentSnapshot = if(doc.size>0) doc[doc.size - 1] else null
+            moreDataPresent = doc.size >= docLimit
+            doc.forEach {
                 val userLike = PostDb.getUserLikes(
                     it.getString("postId")!!,
                     userId,
@@ -167,4 +149,13 @@ class ViewModelHomePagePost : ViewModel() {
         private const val TAG = "ViewModelHomePagePost"
     }
 
+}
+
+// TODO(REMOVE THE WARNING)
+@Suppress("UNCHECKED_CAST")
+class ViewModelHomeFactory(
+    private val userId: String
+) : ViewModelProvider.NewInstanceFactory() {
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T =
+        ViewModelHomePagePost(userId) as T
 }

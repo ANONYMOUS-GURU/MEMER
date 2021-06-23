@@ -18,8 +18,6 @@ import com.example.memer.HELPERS.GLOBAL_INFORMATION.nameOfUserElement
 import com.example.memer.HELPERS.GLOBAL_INFORMATION.userIdElement
 import com.example.memer.MODELS.Comment
 import com.example.memer.MODELS.PostContents2
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.*
 import kotlinx.coroutines.tasks.await
@@ -79,12 +77,8 @@ object PostDb {
     }
 
     //TODO(GET POSTS IMPLEMENT USING CLOUD FUNCTION FOR GETTING USER LIKES BOOKMARKS AND GETTING IT IN ACCORDANCE WITH USER RELATIONS ETC.)
-    suspend fun getPosts(
-        lastDocument: DocumentSnapshot?,
-        docLimit: Long,
-        onCompleteListener: OnCompleteListener<QuerySnapshot>,
-        onFailureListener: OnFailureListener
-    ): ArrayList<DocumentSnapshot> {
+    suspend fun getPosts(lastDocument: DocumentSnapshot?, docLimit: Long,userId: String)
+    : ArrayList<DocumentSnapshot> {
         val db = FirebaseFirestore.getInstance()
 
 

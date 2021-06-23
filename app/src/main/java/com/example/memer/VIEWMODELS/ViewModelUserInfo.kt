@@ -2,40 +2,74 @@ package com.example.memer.VIEWMODELS
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.*
+import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.FIRESTORE.UserDb
 import com.example.memer.HELPERS.InternalStorage
+import com.example.memer.MODELS.PostContents2
+import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
+import com.example.memer.MODELS.PostHomePage
 import com.example.memer.MODELS.UserData
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-
-class ViewModelUserInfo(initUser: UserData?, application: Application):ViewModel(){
+class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewModel() {
 
     private var user: UserData? = null
     private var userMLD: MutableLiveData<UserData?> = MutableLiveData<UserData?>()
-    val userLD : LiveData<UserData?>
+    val userLD: LiveData<UserData?>
         get() = userMLD
 
     private val appContext = application
 
+    private var posts: ArrayList<PostContents2> = ArrayList()
+    private val postsMutableLiveData: MutableLiveData<ArrayList<PostContents2>> =
+        MutableLiveData<ArrayList<PostContents2>>()
+    val postsLiveData: LiveData<ArrayList<PostContents2>>
+        get() = postsMutableLiveData
+
+    private var postComplete: ArrayList<PostHomePage> = ArrayList()
+    private val postCompleteMLD: MutableLiveData<ArrayList<PostHomePage>> = MutableLiveData()
+    val postCompleteLD: LiveData<ArrayList<PostHomePage>>
+        get() = postCompleteMLD
+
+    private val docLimit: Long = 40
+    private var lastPostDocumentSnapshot: DocumentSnapshot? = null
+    var moreDataPresent = false
+
     init {
         user = initUser
-        userMLD.value  = user
+        userMLD.value = user
     }
 
-    fun updateUser(mUser: UserData){
+    fun updateUser(mUser: UserData) {
         UserDb.updateUser(mUser)
         viewModelScope.launch {
             InternalStorage.writeUser(mUser, getApplication())
 
-            withContext(Dispatchers.Main){
+            withContext(Dispatchers.Main) {
                 user = mUser
+                userMLD.value = user
+            }
+        }
+    }
+
+    fun updateUserImageReference(_user: Pair<String?, String?>, userId: String) {
+        UserDb.updateImageReference(_user, userId)
+
+        viewModelScope.launch {
+            InternalStorage.updateUserImageReference(_user.first, _user.second, getApplication())
+
+            withContext(Dispatchers.Main) {
+                user!!.userAvatarReference = _user.second
+                user!!.userProfilePicReference = _user.first
                 userMLD.value = user
             }
         }
@@ -45,21 +79,8 @@ class ViewModelUserInfo(initUser: UserData?, application: Application):ViewModel
         return appContext
     }
 
-    fun updateUserImageReference(_user: Pair<String?, String?>, userId: String){
-        UserDb.updateImageReference(_user, userId)
 
-        viewModelScope.launch {
-            InternalStorage.updateUserImageReference(_user.first, _user.second, getApplication())
-
-            withContext(Dispatchers.Main){
-                user !! .userAvatarReference= _user.second
-                user !! .userProfilePicReference = _user.first
-                userMLD.value = user
-            }
-        }
-    }
-
-    fun initUser(){
+    fun initUser() {
 
         /*
          * Check if one needs to update the local user cache . Only applicable in case of non-user
@@ -68,28 +89,29 @@ class ViewModelUserInfo(initUser: UserData?, application: Application):ViewModel
 
         viewModelScope.launch {
             user = InternalStorage.readUser(getApplication())
-            withContext(Dispatchers.Main){
+            withContext(Dispatchers.Main) {
                 userMLD.value = user
             }
         }
     }
+
     fun fetchAndReInitUser() {
-        val mUser = Firebase.auth.currentUser !!
+        val mUser = Firebase.auth.currentUser!!
         viewModelScope.launch {
             user = UserDb.getOldUser(mUser)
             InternalStorage.writeUser(user!!, getApplication())
-            withContext(Dispatchers.Main){
+            withContext(Dispatchers.Main) {
                 userMLD.value = user
             }
         }
 
     }
-    fun userExists():Boolean{
+
+    fun userExists(): Boolean {
         return InternalStorage.userExists(getApplication())
     }
 
-
-    fun signOut(){
+    fun signOut() {
         Firebase.auth.signOut()
         FirebaseFirestore.getInstance().clearPersistence()
         InternalStorage.deleteUser(getApplication())
@@ -97,12 +119,148 @@ class ViewModelUserInfo(initUser: UserData?, application: Application):ViewModel
         userMLD.value = null
     }
 
-    companion object{
+    companion object {
         private const val TAG = "VMUserInfo"
         private const val ACCESS_GOOGLE = "GOOGLE"
         private const val ACCESS_PHONE = "PHONE"
     }
 
+    fun getUserPosts(userId: String) {
+        viewModelScope.launch {
+            val docs = PostDb.getPostsUsers(null, docLimit, userId)
+            moreDataPresent = docs.size >= docLimit
+            lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
+            Log.d(TAG, "init block: ${docs.size}")
+            posts = ArrayList()
+            docs.forEach {
+                posts.add(it.toPostContents2())
+            }
+            withContext(Dispatchers.Main) {
+                postsMutableLiveData.value = posts
+            }
+            Log.d(TAG, "init block : Updated")
+        }
+    }
+
+    fun getMoreUserPosts(userId: String) {
+        viewModelScope.launch {
+            val docs = PostDb.getPostsUsers(lastPostDocumentSnapshot, docLimit, userId)
+            moreDataPresent = docs.size >= docLimit
+            lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
+            docs.forEach {
+                posts.add(it.toPostContents2())
+            }
+            withContext(Dispatchers.Main) {
+                postsMutableLiveData.value = posts
+            }
+        }
+    }
+
+    fun initListPost(userId: String) {
+        postComplete = ArrayList()
+        viewModelScope.launch {
+            posts.forEach {
+                val userLike = PostDb.getUserLikes(
+                    it.postId,
+                    userId,
+                    it.postOwnerId
+                )
+                // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
+                val userBookMark = PostDb.getUserBookMarks(
+                    it.postId,
+                    userId,
+                    it.postOwnerId
+                )
+                postComplete.add(
+                    PostHomePage(
+                        postContents = it,
+                        isLiked = userLike,
+                        isCommented = false,
+                        isBookmarked = userBookMark
+                    )
+                )
+            }
+            withContext(Dispatchers.Main) {
+                postCompleteMLD.value = postComplete
+            }
+
+        }
+
+    }
+
+    fun getMoreListPost(userId: String) {
+        viewModelScope.launch {
+            val docs = PostDb.getPostsUsers(lastPostDocumentSnapshot, docLimit, userId)
+            moreDataPresent = docs.size >= docLimit
+            docs.forEach {
+                posts.add(it.toPostContents2())
+                val userLike = PostDb.getUserLikes(
+                    it.getString("postId")!!,
+                    userId,
+                    it.getString("postOwnerId")!!
+                )
+                // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
+                val userBookMark = PostDb.getUserBookMarks(
+                    it.getString("postId")!!,
+                    userId,
+                    it.getString("postOwnerId")!!
+                )
+                postComplete.add(
+                    PostHomePage(
+                        postContents = it.toPostContents2(),
+                        isLiked = userLike,
+                        isCommented = false,
+                        isBookmarked = userBookMark
+                    )
+                )
+            }
+            withContext(Dispatchers.Main) {
+                postsMutableLiveData.value = posts
+                postCompleteMLD.value = postComplete
+            }
+        }
+    }
+
+
+    fun likeClicked(
+        position: Int,
+        postId: String,
+        userId: String,
+        username: String,
+        userAvatarReference: String?,
+        nameOfUser: String,
+        postOwnerId: String,
+        incrementLike: Boolean
+    ) {
+//        val likes = LikedBy(username,userAvatarReference,userId,1,postId,postOwnerId,null)
+        PostDb.updateLikesPost(
+            postId,
+            postOwnerId,
+            userId,
+            username,
+            userAvatarReference,
+            nameOfUser,
+            incrementLike
+        )
+
+        postComplete[position].isLiked =
+            postComplete[position].isLiked + if (incrementLike) 1 else -1
+        postCompleteMLD.value = postComplete
+    }
+
+
+    fun bookMarkClicked(position: Int, userId: String, postId: String, postOwnerId: String) {
+
+        if (postComplete[position].isBookmarked) {
+            postComplete[position].isBookmarked = false
+            PostDb.bookMarkPost(userId, postId, postOwnerId, true)
+        } else {
+            postComplete[position].isBookmarked = true
+            PostDb.bookMarkPost(userId, postId, postOwnerId, false)
+        }
+
+        postCompleteMLD.value = postComplete
+    }
 
 }
 

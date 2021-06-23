@@ -1,79 +1,56 @@
 package com.example.memer.FRAGMENTS
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupMenu
 import android.widget.Toast
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
-import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.HomePageAdapter
-import com.example.memer.HELPERS.InternalStorage
 import com.example.memer.HELPERS.LoadingDialog
 import com.example.memer.NavGraphDirections
 import com.example.memer.R
-import com.example.memer.VIEWMODELS.ViewModelHomeFactory
 import com.example.memer.VIEWMODELS.ViewModelHomePagePost
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentHomePageBinding
+import com.example.memer.databinding.FragmentPostListUserBinding
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.OnFailureListener
-import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.ktx.Firebase
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
-class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageAdapter.OnMenuClickListener,
+class FragmentPostListUser : Fragment(),HomePageAdapter.ItemClickListener,HomePageAdapter.OnMenuClickListener,
     View.OnClickListener {
 
-    private lateinit var binding: FragmentHomePageBinding
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var homePageAdapter: HomePageAdapter
-    private lateinit var loadingDialog: LoadingDialog
     private lateinit var mAuth: FirebaseAuth
     private lateinit var navController: NavController
-
-
-
+    private lateinit var binding: FragmentPostListUserBinding
 
     private val viewModelUser: ViewModelUserInfo by activityViewModels()
-    private val viewModelHomePage: ViewModelHomePagePost by viewModels {
-        ViewModelHomeFactory(viewModelUser.userLD.value!!.userId)
-    }
 
     private lateinit var onCompleteListener: OnCompleteListener<QuerySnapshot>
     private lateinit var onFailureListener: OnFailureListener
 
-
-
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Inflate the layout for this fragment
-        binding = FragmentHomePageBinding.inflate(inflater, container, false)
-        loadingDialog = LoadingDialog(requireActivity())
+        binding = FragmentPostListUserBinding.inflate(inflater,container,false)
 
         onCompleteListener = OnCompleteListener<QuerySnapshot> { task ->
             if (task.isSuccessful) {
@@ -86,9 +63,8 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
             Toast.makeText(context, "Failed ", Toast.LENGTH_SHORT).show()
         }
 
-
-
         requireActivity().bottomNavigationView.visibility = View.VISIBLE
+
         return binding.root
     }
 
@@ -96,56 +72,24 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
         super.onViewCreated(view, savedInstanceState)
         mAuth = Firebase.auth
         navController = Navigation.findNavController(view)
-        binding.homePageToolbar.setupWithNavController(navController)
-        binding.homePageToolbar.setOnMenuItemClickListener {
-            when (it.itemId) {
-                R.id.fragmentChat -> {
-                    navController.navigate(R.id.action_fragmentHomePage_to_fragmentChat)
-                    true
-                }
-                else -> false
-            }
-        }
+        binding.postListUserToolbar.setupWithNavController(navController)
 
-        val sharedPref = requireActivity().getPreferences(Context.MODE_PRIVATE)
-        val onBoardingDone = sharedPref.getBoolean(getString(R.string.on_boarding_done), false)
-
-        if(!onBoardingDone){
-            Log.d(TAG, "onViewCreated: starting On Boarding")
-            navController.navigate(R.id.action_fragmentHomePage_to_fragmentOnBoarding)
-        }else{
-            initializeUserViewModel()
-        }
-    }
-    private fun initializeUserViewModel() {
-        when {
-            viewModelUser.userLD.value != null -> {
-                Log.d(TAG, "initializeViewModel: Already Present Loading")
-                initDataAndViewModel()
-            }
-            viewModelUser.userExists() -> {
-                viewModelUser.initUser()
-                initDataAndViewModel()
-            }
-            else -> {
-                navController.navigate(R.id.action_global_fragmentLogIn)
-                Log.d(TAG, "initializeUserViewModel: User Not Found in Internal Going back to Login")
-            }
-        }
+        initDataAndViewModel()
     }
 
     private fun initDataAndViewModel() {
         initRecyclerView()
-        Log.d(TAG, "initDataAndViewModel: Here")
-        viewModelHomePage.postLD.observe(viewLifecycleOwner, {
+        Log.d(TAG, "initDataAndViewModel: HEre")
+        viewModelUser.postCompleteLD.observe(viewLifecycleOwner, {
             Log.d(TAG, "onCreateView: ${it.size}")
             homePageAdapter.submitList(it)
             homePageAdapter.notifyDataSetChanged()
         })
-
+        viewModelUser.initListPost(viewModelUser.userLD.value !!.userId)
     }
+
     private fun initRecyclerView() {
-        val recyclerView = binding.homePageRecyclerView
+        val recyclerView = binding.postListUserRecyclerView
         linearLayoutManager = LinearLayoutManager(context)
         homePageAdapter = HomePageAdapter(this, this,requireActivity(),viewModelUser.userLD.value !! .userId)
 
@@ -156,8 +100,8 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    if (viewModelHomePage.moreDataPresent && !recyclerView.canScrollVertically(1) && newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        viewModelHomePage.getMoreData(viewModelUser.userLD.value!!.userId)
+                    if (viewModelUser.moreDataPresent && !recyclerView.canScrollVertically(1) && newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        viewModelUser.getMoreListPost(viewModelUser.userLD.value!!.userId)
                     }
                 }
             })
@@ -177,7 +121,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
     override fun onLikeClick(position: Int) {
         Log.d("FragmentHomePage", "onLikeClick $position")
 
-        viewModelHomePage.likeClicked(
+        viewModelUser.likeClicked(
             position,
             homePageAdapter.getPost(position).postContents.postId,
             viewModelUser.userLD.value!!.userId,
@@ -196,7 +140,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
     }
     override fun onBookMarkClick(position: Int) {
         Log.d(TAG, "onBookMarkClick $position")
-        viewModelHomePage.bookMarkClicked(
+        viewModelUser.bookMarkClicked(
             position, viewModelUser.userLD.value!!.userId,
             homePageAdapter.getPost(position).postContents.postId,
             homePageAdapter.getPost(position).postContents.postOwnerId
@@ -213,7 +157,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
             navController.navigate(action)
         }
     }
-
 
     override fun onClick(v: View?) {
 
@@ -246,6 +189,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
     override fun savePostClick(position: Int) {
         Log.d(TAG, "savePostClick: Save")
     }
+
 
 
 }

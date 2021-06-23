@@ -1,44 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:gravity="center"
+    android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".FRAGMENTS.FragmentHomePage">
+    tools:context=".FRAGMENTS.FragmentPostListRandom">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/homePageToolbar"
+        android:id="@+id/postListRandomToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/teal_200"
         android:elevation="4dp"
-        android:minHeight="?attr/actionBarSize"
-        app:menu="@menu/home_page_menu">
+        android:minHeight="?attr/actionBarSize">
 
         <TextView
-            android:id="@+id/textViewAppbarHome"
+            android:id="@+id/textViewAppbarPostListRandom"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="cursive"
             android:padding="8dp"
-            android:text="@string/app_name"
+            android:text="@string/post"
             android:textSize="32sp" />
 
 
     </androidx.appcompat.widget.Toolbar>
 
     <androidx.core.widget.NestedScrollView
-        android:id="@+id/homePageScrollView"
+        android:id="@+id/postListRandomScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/homePageRecyclerView"
+            android:id="@+id/postListRandomRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             tools:listitem="@layout/single_meme_view" />
+
     </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>

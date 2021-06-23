@@ -48,5 +48,5 @@ data class PostHomePage(
     var isLiked : Long = 0,
     var isBookmarked: Boolean =  false,
     var isCommented : Boolean = false,
-
+    var isUpdated:Boolean = false
 )

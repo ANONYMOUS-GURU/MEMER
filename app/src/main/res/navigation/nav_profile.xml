@@ -25,5 +25,12 @@
         <action
             android:id="@+id/action_fragmentProfile_to_fragmentProfilePic"
             app:destination="@id/fragmentProfilePic" />
+        <action
+            android:id="@+id/action_fragmentProfile_to_fragmentPostListUser"
+            app:destination="@id/fragmentPostListUser" />
     </fragment>
+    <fragment
+        android:id="@+id/fragmentPostListUser"
+        android:name="com.example.memer.FRAGMENTS.FragmentPostListUser"
+        tools:layout="@layout/fragment_post_list_user" />
 </navigation>
