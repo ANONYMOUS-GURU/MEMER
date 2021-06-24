@@ -22,6 +22,9 @@ object GLOBAL_INFORMATION {
     const val userIdElement = "userId"
     const val nameOfUserElement = "nameOfUser"
 
+    const val LIKE_LIST = "LIKE_LIST"
+    const val DISLIKE_LIST = "DISLIKE_LIST"
+
 
 
 }

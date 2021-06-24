@@ -1,5 +1,6 @@
 package com.example.memer.ADAPTERS
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -7,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.PopupMenu
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.recyclerview.widget.RecyclerView
@@ -14,6 +16,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.memer.MODELS.PostHomePage
 import com.example.memer.R
+import kotlinx.android.synthetic.main.post_comment_view.view.*
 import kotlinx.android.synthetic.main.single_meme_view.view.*
 
 
@@ -79,18 +82,17 @@ class HomePageAdapter(
         private val username: TextView = itemView.usernameHome
         private val imagePost: ImageView = itemView.imagePostHomePage
         private val menuOption: ImageView = itemView.menuOnItemHome
-        private val addComment: ImageView = itemView.commentHome
+        private val addComment: View = itemView.commentHolderHomePagePost
         private val bookmark: ImageView = itemView.bookmarkHome
         private val likeOption: ImageView = itemView.likeOptionHome
         private val likesCount: TextView = itemView.likeCountHomePage
-        private val commentsCount: TextView = itemView.commentCountHomePage
+        private val commentsCount: TextView = itemView.viewMoreCommentPost
         private val postCaption:TextView = itemView.postCationTextView
+        private val commentOption:View = itemView.commentOptionLayout
         private lateinit var popupMenu: PopupMenu
 
-        init {
-            itemView.setOnClickListener(this)
-        }
 
+        @SuppressLint("SetTextI18n")
         fun bind(postHomePage: PostHomePage) {
 
             val requestOptionsAvatar = RequestOptions()
@@ -125,10 +127,6 @@ class HomePageAdapter(
             else
                 likeOption.setImageDrawable(getDrawable(mContext, R.drawable.like_icon_border))
 
-            if(postHomePage.isCommented)
-                addComment.setImageDrawable(getDrawable(mContext, R.drawable.default_avatar))
-            else
-                addComment.setImageDrawable(getDrawable(mContext, R.drawable.comment_icon))
 
             if(postHomePage.postContents.postDescription.isEmpty())
                 postCaption.visibility = View.GONE
@@ -140,18 +138,28 @@ class HomePageAdapter(
             popupMenu = addMenuItem(menuOption,postHomePage.postContents.postOwnerId == userId)
 
             likesCount.text = postHomePage.postContents.likeCount.toString()
-            commentsCount.text = postHomePage.postContents.commentCount.toString()
+            /*
+            * TODO(PostHomePage add first comment of that post as postContents.exampleComment as a
+            *  nullable array if postHomePage.exampleComment == null addComment.visibility = View.GONE else commentsCount.text = "See ..." and visible)
+            * */
+            if(postHomePage.postContents.commentCount > 0 )
+            {
+                addComment.visibility = View.VISIBLE
+                commentsCount.text = " See All ${postHomePage.postContents.commentCount.toString()} Comments"
+                addComment.setOnClickListener(this)
+            } else{
+                addComment.visibility = View.GONE
+            }
 
 
             userAvatar.setOnClickListener(this)
             username.setOnClickListener(this)
             imagePost.setOnClickListener(this)
             likeOption.setOnClickListener(this)
-            addComment.setOnClickListener(this)
             bookmark.setOnClickListener(this)
             menuOption.setOnClickListener(this)
             likesCount.setOnClickListener(this)
-            commentsCount.setOnClickListener(this)
+            commentOption.setOnClickListener(this)
 
         }
 
@@ -169,13 +177,13 @@ class HomePageAdapter(
         override fun onClick(v: View?) {
             if (v != null) {
                 when (v.id) {
-                    itemView.id -> itemClickListener.onImageItemClick(absoluteAdapterPosition)
                     userAvatar.id -> itemClickListener.onUserClick(absoluteAdapterPosition)
                     username.id -> itemClickListener.onUserClick(absoluteAdapterPosition)
                     likeOption.id -> itemClickListener.onLikeClick(absoluteAdapterPosition)
                     addComment.id -> itemClickListener.onCommentClick(absoluteAdapterPosition)
-                    commentsCount.id -> itemClickListener.onCommentClick(absoluteAdapterPosition)
+                    commentOption.id -> itemClickListener.onCommentClick(absoluteAdapterPosition)
                     bookmark.id -> itemClickListener.onBookMarkClick(absoluteAdapterPosition)
+                    likesCount.id -> itemClickListener.onLikeListClick(absoluteAdapterPosition)
                     menuOption.id -> popupMenu.show()
                 }
             }
@@ -222,6 +230,7 @@ class HomePageAdapter(
         fun onCommentClick(position: Int)
         fun onBookMarkClick(position: Int)
         fun onUserClick(position: Int)
+        fun onLikeListClick(position: Int)
     }
     interface OnMenuClickListener{
         fun sharePostClick(position: Int)

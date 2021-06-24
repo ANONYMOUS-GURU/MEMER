@@ -115,8 +115,7 @@ class FragmentPostListRandom : Fragment() , HomePageAdapter.ItemClickListener,Ho
     override fun onImageItemClick(position: Int) {
         Toast.makeText(activity, "Clicked on image at position $position", Toast.LENGTH_SHORT)
             .show()
-        val action = NavGraphDirections.actionGlobalFragmentLikes(homePageAdapter.getPost(position).postContents)
-        navController.navigate(action)
+
     }
     override fun onVideoItemClick(position: Int) {
         Toast.makeText(activity, "Clicked on video at position $position", Toast.LENGTH_SHORT)
@@ -161,6 +160,12 @@ class FragmentPostListRandom : Fragment() , HomePageAdapter.ItemClickListener,Ho
             navController.navigate(action)
         }
     }
+
+    override fun onLikeListClick(position: Int) {
+        val action = NavGraphDirections.actionGlobalFragmentLikes(homePageAdapter.getPost(position).postContents)
+        navController.navigate(action)
+    }
+
 
     override fun onClick(v: View?) {
 

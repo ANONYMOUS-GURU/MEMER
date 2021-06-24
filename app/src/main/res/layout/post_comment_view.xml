@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/commentPostRootRelativeLayout">
+
+    <ImageView
+        android:id="@+id/userAvatarCommentPost"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        tools:srcCompat="@tools:sample/avatars" />
+
+    <TextView
+        android:id="@+id/usernameCommentPost"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="2dp"
+        android:text="@string/username"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_toEndOf="@id/userAvatarCommentPost"/>
+
+    <TextView
+        android:id="@+id/userCommentContentPost"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="6dp"
+        android:text="@string/comments"
+        android:textColor="@color/black"
+        android:layout_marginEnd="8dp"
+        android:textSize="14sp"
+        android:textStyle="italic"
+        android:layout_below="@id/usernameCommentPost"
+        android:layout_toEndOf="@id/userAvatarCommentPost" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/viewMoreCommentPost"
+        android:padding="8dp"
+        android:layout_alignStart="@id/userCommentContentPost"
+        android:layout_margin="8dp"
+        android:layout_below="@id/userCommentContentPost"
+        android:text="@string/see_all_comments"/>
+
+
+
+</RelativeLayout>

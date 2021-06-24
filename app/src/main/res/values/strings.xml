@@ -65,4 +65,7 @@
     <string name="edit_post">Edit Post</string>
     <string name="report">Report</string>
     <string name="your_post">Your Post</string>
+    <string name="todo">TODO</string>
+    <string name="see_all_comments">See All Comments</string>
+    <string name="dislikes">DisLikes</string>
 </resources>

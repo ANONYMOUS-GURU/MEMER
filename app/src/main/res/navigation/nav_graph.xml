@@ -54,6 +54,10 @@
         <argument
             android:name="post"
             app:argType="com.example.memer.MODELS.PostContents2" />
+        <argument
+            android:name="isLikeList"
+            app:argType="boolean"
+            android:defaultValue="true" />
     </fragment>
 
     <include app:graph = "@navigation/make_post_nav_graph"/>
