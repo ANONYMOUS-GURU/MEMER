@@ -179,7 +179,9 @@ class FragmentPostListUser : Fragment(),HomePageAdapter.ItemClickListener,HomePa
     }
 
     override fun editPostClick(position: Int) {
-        Log.d(TAG, "editPostClick: Edit")
+        val action = NavGraphDirections.actionGlobalFragmentEditPost(homePageAdapter.getPost(position).postContents)
+        navController.navigate(action)
+
     }
 
     override fun deletePostClick(position: Int) {

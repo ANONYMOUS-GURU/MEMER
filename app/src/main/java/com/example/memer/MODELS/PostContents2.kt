@@ -14,7 +14,7 @@ data class PostContents2(
     val postOwnerId:String,                           // unique id of the user who posted
 
     val postResource: String,                                     // imageResourceReference,videoResourceReference from cloud storage
-    val postDescription:String,                       // post description given by post owner
+    var postDescription:String,                       // post description given by post owner
     val postTypeImage:Boolean,
 
     val username:String,
@@ -54,9 +54,10 @@ data class PostContents2(
     }
 }
 
+@Parcelize
 data class PostHomePage(
     val postContents: PostContents2,
     var isLiked : Boolean = false,
     var isBookmarked: Boolean =  false,
     var isCommented : Boolean = false,
-)
+):Parcelable

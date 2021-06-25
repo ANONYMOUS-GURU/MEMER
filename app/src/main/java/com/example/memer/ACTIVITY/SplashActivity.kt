@@ -6,8 +6,13 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 
 import android.util.Log
+import androidx.lifecycle.viewModelScope
+import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.FRAGMENTS.FragmentHomePage
 import com.example.memer.HELPERS.InternalStorage
+import com.example.memer.MODELS.LikeType
+import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
+import com.example.memer.MODELS.PostHomePage
 import com.example.memer.MODELS.UserData
 import com.example.memer.R
 import com.google.firebase.auth.ktx.auth
@@ -37,6 +42,40 @@ class SplashActivity : AppCompatActivity() {
             startActivity(intent)
             doStartUpWork()
             finish()
+
+            // TODO(CHANGE THIS TO LOCAL DB POSTS SAVED RATHER THAN FIRE STORE REQUEST)
+//            val post = ArrayList<PostHomePage>()
+//            CoroutineScope(Dispatchers.IO).launch {
+//                val doc = PostDb.getPosts(null, 10)
+//                doc.forEach {
+//                    val userLike = PostDb.getUserLikes(
+//                        LikeType.PostLike,
+//                        it.getString("postId")!!,
+//                        user.userId
+//                    )
+//                    // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
+//                    val userBookMark = PostDb.getUserBookMarks(
+//                        it.getString("postId")!!,
+//                        user.userId,
+//                    )
+//                    post.add(
+//                        PostHomePage(
+//                            postContents = it.toPostContents2(),
+//                            isLiked = userLike,
+//                            isCommented = false,
+//                            isBookmarked = userBookMark
+//                        )
+//                    )
+//                }
+//                withContext(Dispatchers.Main) {
+//                    intent.putExtra("Post",post)
+//                    startActivity(intent)
+//                    doStartUpWork()
+//                    finish()
+//                }
+//            }
+
+
         }
     }
 
@@ -56,7 +95,6 @@ class SplashActivity : AppCompatActivity() {
             }
         }
     }
-
     private fun doStartUpWork() {
         /*
         * Get Posts from local Db and populate with the posts from last visit so that

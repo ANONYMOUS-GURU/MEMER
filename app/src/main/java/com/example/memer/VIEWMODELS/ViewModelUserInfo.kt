@@ -270,6 +270,21 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
         postCompleteMLD.value = postComplete
     }
 
+    fun editPost(
+        postId: String,
+        postCaption:String,
+        position: Int
+    ){
+        PostDb.editPost(
+            postCaption = postCaption,
+            postId = postId
+        )
+
+        postComplete[position].postContents.postDescription = postCaption
+        postCompleteMLD.value = postComplete
+
+    }
+
     companion object {
         private const val TAG = "VMUserInfo"
         private const val ACCESS_GOOGLE = "GOOGLE"

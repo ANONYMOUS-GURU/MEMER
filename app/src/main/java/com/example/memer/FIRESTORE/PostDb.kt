@@ -22,7 +22,11 @@ object PostDb {
     }
 
     fun editPost(postCaption: String, postId: String) {
-
+        val db = FirebaseFirestore.getInstance()
+        db.collection(FireStoreCollection.Post.value).document(postId).update(
+            mapOf(PostElement.PostDescription.value to postCaption,
+            PostElement.UpdatedAt.value to null)
+        )
     }
 
     fun report(reports: Reports) {

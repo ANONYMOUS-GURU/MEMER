@@ -179,23 +179,20 @@ class FragmentPostListRandom : Fragment() , HomePageAdapter.ItemClickListener,Ho
     override fun sharePostClick(position: Int) {
         Log.d(TAG, "sharePostClick: Share")
     }
-
     override fun editPostClick(position: Int) {
-        Log.d(TAG, "editPostClick: Edit")
-    }
+        val action = NavGraphDirections.actionGlobalFragmentEditPost(homePageAdapter.getPost(position).postContents)
+        navController.navigate(action)
 
+    }
     override fun deletePostClick(position: Int) {
         Log.d(TAG, "deletePostClick: Delete")
     }
-
     override fun copyLinkPostClick(position: Int) {
         Log.d(TAG, "copyLinkPostClick: Copy Link")
     }
-
     override fun reportPostClick(position: Int) {
         Log.d(TAG, "reportPostClick: Report")
     }
-
     override fun savePostClick(position: Int) {
         Log.d(TAG, "savePostClick: Save")
     }

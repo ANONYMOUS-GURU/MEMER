@@ -54,7 +54,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
     private lateinit var navController: NavController
 
     private val viewModelUser: ViewModelUserInfo by activityViewModels()
-    private val viewModelHomePage: ViewModelHomePagePost by viewModels {
+    private val viewModelHomePage: ViewModelHomePagePost by activityViewModels {
         ViewModelHomeFactory(viewModelUser.userLD.value!!.userId)
     }
 
@@ -220,7 +220,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
         navController.navigate(action)
     }
 
-
     override fun onClick(v: View?) {
 
     }
@@ -233,7 +232,9 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
         Log.d(TAG, "sharePostClick: Share")
     }
     override fun editPostClick(position: Int) {
-        Log.d(TAG, "editPostClick: Edit")
+        val action = NavGraphDirections.actionGlobalFragmentEditPost(homePageAdapter.getPost(position).postContents)
+        navController.navigate(action)
+
     }
     override fun deletePostClick(position: Int) {
         Log.d(TAG, "deletePostClick: Delete")

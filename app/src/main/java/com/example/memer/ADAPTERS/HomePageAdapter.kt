@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.RelativeLayout
@@ -198,7 +199,6 @@ class HomePageAdapter(
                     }
                     R.id.editPost -> {
                         onMenuClick.editPostClick(absoluteAdapterPosition)
-                        return true
                     }
                     R.id.deletePost -> {
                         onMenuClick.deletePostClick(absoluteAdapterPosition)

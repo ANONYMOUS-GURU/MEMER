@@ -68,4 +68,5 @@
     <string name="todo">TODO</string>
     <string name="see_all_comments">See All Comments</string>
     <string name="dislikes">DisLikes</string>
+    <string name="set_caption">Set Caption</string>
 </resources>

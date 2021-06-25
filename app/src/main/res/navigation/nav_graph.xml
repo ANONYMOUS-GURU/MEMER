@@ -92,5 +92,14 @@
         android:id="@+id/fragmentOnBoarding"
         android:name="com.example.memer.FRAGMENTS.FragmentOnBoarding"
         tools:layout="@layout/fragment_on_boarding" />
+    <fragment
+        android:id="@+id/fragmentEditPost"
+        android:name="com.example.memer.FRAGMENTS.FragmentEditPost"
+        tools:layout="@layout/fragment_edit_post">
+        <argument
+            android:name="post"
+            app:argType="com.example.memer.MODELS.PostContents2" />
+    </fragment>
+    <action android:id="@+id/action_global_fragmentEditPost" app:destination="@id/fragmentEditPost" />
 
 </navigation>

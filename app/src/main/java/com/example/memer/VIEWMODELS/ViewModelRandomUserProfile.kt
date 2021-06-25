@@ -187,6 +187,22 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
         postCompleteMLD.value = postComplete
     }
 
+    fun editPost(
+        postId: String,
+        postCaption:String,
+        position: Int
+    ){
+        PostDb.editPost(
+            postCaption = postCaption,
+            postId = postId
+        )
+
+        postComplete[position].postContents.postDescription = postCaption
+        postCompleteMLD.value = postComplete
+
+    }
+
+
     companion object {
         const val TAG = "VMRandomUserProfile"
     }
