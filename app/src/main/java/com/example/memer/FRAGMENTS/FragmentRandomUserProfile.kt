@@ -119,9 +119,9 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
             Log.d(TAG, "onViewCreated: ${it.postCount}")
             initView(it)
         })
-        viewModelRandomUser.postLD.observe(viewLifecycleOwner,{
-            showPosts(it)
-        })
+//        viewModelRandomUser.postLD.observe(viewLifecycleOwner,{
+//            showPosts(it)
+//        })
     }
     override fun onClick(v: View?) {
         when (v?.id){

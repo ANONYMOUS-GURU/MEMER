@@ -1,42 +1,42 @@
 package com.example.memer.VIEWMODELS
 
-import android.app.Application
 import android.util.Log
 import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.MODELS.*
 import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.android.gms.tasks.OnFailureListener
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ViewModelHomePagePost(userId: String) : ViewModel() {
 
-    private var post: ArrayList<PostHomePage> = ArrayList()
-    private var postMLD: MutableLiveData<ArrayList<PostHomePage>> =
-        MutableLiveData<ArrayList<PostHomePage>>()
-    val postLD: LiveData<ArrayList<PostHomePage>>
+    private var data:ArrayList<PostHomePage> = ArrayList()
+
+    private var post: PostState = PostState.InitialLoading
+    private var postMLD: MutableLiveData<PostState> =
+        MutableLiveData<PostState>()
+    val postLD: LiveData<PostState>
         get() = postMLD
 
-    var moreDataPresent: Boolean = true
-    private val docLimit: Long = 5
+    var moreDataPresent: Boolean = false
+
+
+    private val docLimit: Long = 2
     private var lastDocumentSnapshot: DocumentSnapshot? = null
 
     init {
+        postMLD.value = post
         getData(userId)
     }
 
     private fun getData(userId: String) {
-        post = ArrayList()
+        data = ArrayList()
         viewModelScope.launch {
+            moreDataPresent = false
             val doc = PostDb.getPosts(lastDocumentSnapshot, docLimit)
-
             Log.d(TAG, "getData: Got Data")
-            moreDataPresent = doc.size >= docLimit
             lastDocumentSnapshot = if (doc.size > 0) doc[doc.size - 1] else null
             doc.forEach {
                 val userLike = PostDb.getUserLikes(
@@ -49,7 +49,7 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
                     it.getString("postId")!!,
                     userId
                 )
-                post.add(
+                data.add(
                     PostHomePage(
                         postContents = it.toPostContents2(),
                         isLiked = userLike,
@@ -60,7 +60,9 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
             }
             withContext(Dispatchers.Main) {
                 Log.d(TAG, "getData: updating")
+                post = PostState.Loaded(data)
                 postMLD.value = post
+                moreDataPresent = doc.size >= docLimit
             }
 
         }
@@ -68,13 +70,16 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
 
 
     fun getMoreData(userId: String) {
+        post = PostState.LoadingMoreData(data)
+        postMLD.value = post
         viewModelScope.launch {
+            moreDataPresent = false
             val doc = PostDb.getPosts(
                 lastDocumentSnapshot,
                 docLimit
             )
             lastDocumentSnapshot = if (doc.size > 0) doc[doc.size - 1] else null
-            moreDataPresent = doc.size >= docLimit
+
             doc.forEach {
                 val userLike = PostDb.getUserLikes(
                     LikeType.PostLike,
@@ -86,7 +91,7 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
                     it.getString("postId")!!,
                     userId,
                 )
-                post.add(
+                data.add(
                     PostHomePage(
                         postContents = it.toPostContents2(),
                         isLiked = userLike,
@@ -96,7 +101,9 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
                 )
             }
             withContext(Dispatchers.Main) {
+                post = PostState.Loaded(data)
                 postMLD.value = post
+                moreDataPresent = doc.size >= docLimit
             }
         }
     }
@@ -126,7 +133,8 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
             incrementLike
         )
 
-        post[position].isLiked = !post[position].isLiked
+        data[position].isLiked = !data[position].isLiked
+        post = PostState.Loaded(data)
         postMLD.value = post
     }
 
@@ -148,14 +156,15 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
             postOwnerUsername = postOwnerUsername,
             postOwnerAvatarReference = postOwnerAvatarReference
         )
-        if (post[position].isBookmarked) {
-            post[position].isBookmarked = false
+        if (data[position].isBookmarked) {
+            data[position].isBookmarked = false
             PostDb.bookMarkPost(bookMark = bookMark, true)
         } else {
-            post[position].isBookmarked = true
+            data[position].isBookmarked = true
             PostDb.bookMarkPost(bookMark = bookMark, false)
         }
 
+        post = PostState.Loaded(data)
         postMLD.value = post
     }
 

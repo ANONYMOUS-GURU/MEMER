@@ -13,20 +13,22 @@ import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.memer.ADAPTERS.AdapterRandomUserPostImage
+import com.example.memer.ADAPTERS.AdapterFragmentYourPosts
+import com.example.memer.MODELS.PostThumbnailState
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelRandomUserProfile
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentRandomUserPostBinding
 
-class FragmentRandomUserPost : Fragment() , AdapterRandomUserPostImage.ItemClickListener{
+class FragmentRandomUserPost : Fragment() , AdapterFragmentYourPosts.ItemClickListener{
 
     private lateinit var binding: FragmentRandomUserPostBinding
     private lateinit var gridLayoutManager: GridLayoutManager
-    private lateinit var mAdapter: AdapterRandomUserPostImage
+    private lateinit var mAdapter: AdapterFragmentYourPosts
     private val viewModelPost: ViewModelRandomUserProfile by navGraphViewModels(R.id.nav_random_profile)
     private val viewModelUser: ViewModelUserInfo by activityViewModels()
     private lateinit var navController: NavController
+
 
     companion object{
         private const val TAG = "FragmentRandomUserPost"
@@ -47,7 +49,7 @@ class FragmentRandomUserPost : Fragment() , AdapterRandomUserPostImage.ItemClick
 
     private fun initRecyclerView(){
         gridLayoutManager = GridLayoutManager(context,4)
-        mAdapter = AdapterRandomUserPostImage(this, requireActivity())
+        mAdapter = AdapterFragmentYourPosts(this, requireActivity())
         val recyclerView =binding.recyclerViewFragmentRandomUserPosts
         recyclerView.apply {
             layoutManager = gridLayoutManager
@@ -68,10 +70,28 @@ class FragmentRandomUserPost : Fragment() , AdapterRandomUserPostImage.ItemClick
         super.onViewCreated(view, savedInstanceState)
         navController = requireParentFragment().findNavController()
         viewModelPost.postLD.observe(viewLifecycleOwner, {
-            mAdapter.submitList(it)
-            mAdapter.notifyDataSetChanged()
+            when (it) {
+                is PostThumbnailState.Loaded -> {
+                    Log.d(TAG, "initDataAndViewModel: Loaded ${it.post.size}")
+                    mAdapter.submitState(it)
+                    mAdapter.submitList(it.post)
+                    mAdapter.notifyDataSetChanged()
+                }
+                is PostThumbnailState.Refreshing -> {
+                    mAdapter.submitState(it)
+                    Log.d(TAG, "initDataAndViewModel: Refreshing")
+                }
+                is PostThumbnailState.LoadingMoreData -> {
+                    Log.d(TAG, "initDataAndViewModel: Loading More Data")
+                }
+                is PostThumbnailState.InitialLoading -> {
+                    Log.d(TAG, "initDataAndViewModel: Initializing")
+                }
+                is PostThumbnailState.LoadingFailed -> {
+                    Log.d(TAG, "initDataAndViewModel: Failed")
+                }
+            }
         })
-
     }
     override fun onItemClick(position: Int) {
         navController.navigate(R.id.action_fragmentRandomUserProfile_to_fragmentPostListRandom)

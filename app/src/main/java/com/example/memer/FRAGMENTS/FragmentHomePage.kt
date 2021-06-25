@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.HomePageAdapter
 import com.example.memer.HELPERS.InternalStorage
 import com.example.memer.HELPERS.LoadingDialog
+import com.example.memer.MODELS.PostState
 import com.example.memer.NavGraphDirections
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelHomeFactory
@@ -54,14 +55,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
     private lateinit var navController: NavController
 
     private val viewModelUser: ViewModelUserInfo by activityViewModels()
-    private val viewModelHomePage: ViewModelHomePagePost by activityViewModels {
-        ViewModelHomeFactory(viewModelUser.userLD.value!!.userId)
-    }
-
-    private lateinit var onCompleteListener: OnCompleteListener<QuerySnapshot>
-    private lateinit var onFailureListener: OnFailureListener
-
-
+    private val viewModelHomePage: ViewModelHomePagePost by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -72,19 +66,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
         Log.d(TAG, "onCreateView: ")
         binding = FragmentHomePageBinding.inflate(inflater, container, false)
         loadingDialog = LoadingDialog(requireActivity())
-
-        onCompleteListener = OnCompleteListener<QuerySnapshot> { task ->
-            if (task.isSuccessful) {
-                Toast.makeText(context, "Loaded Data", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(context, "Could Not Fetch Data", Toast.LENGTH_SHORT).show()
-            }
-        }
-        onFailureListener = OnFailureListener {
-            Toast.makeText(context, "Failed ", Toast.LENGTH_SHORT).show()
-        }
-
-
 
         requireActivity().bottomNavigationView.visibility = View.VISIBLE
         return binding.root
@@ -138,12 +119,36 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
         initRecyclerView()
         Log.d(TAG, "initDataAndViewModel: Here")
         viewModelHomePage.postLD.observe(viewLifecycleOwner, {
-            Log.d(TAG, "onCreateView: ${it.size}")
-            homePageAdapter.submitList(it)
-            homePageAdapter.notifyDataSetChanged()
+            when (it) {
+                is PostState.Loaded -> {
+                    Log.d(TAG, "initDataAndViewModel: Loaded ${it.post.size}")
+                    homePageAdapter.submitState(it)
+                    homePageAdapter.submitList(it.post)
+                    homePageAdapter.notifyDataSetChanged()
+                }
+                is PostState.Refreshing -> {
+                    homePageAdapter.submitState(it)
+                    Log.d(TAG, "initDataAndViewModel: Refreshing")
+                }
+                is PostState.LoadingMoreData -> {
+                    Log.d(TAG, "initDataAndViewModel: Loading More Data")
+                }
+                is PostState.InitialLoading -> {
+
+                    Log.d(TAG, "initDataAndViewModel: Initializing")
+                }
+                is PostState.LoadingFailed -> {
+                    Log.d(TAG, "initDataAndViewModel: Failed")
+                }
+            }
+
         })
+    }
+
+    private fun initialLoadingState(){
 
     }
+
     private fun initRecyclerView() {
         val recyclerView = binding.homePageRecyclerView
         linearLayoutManager = LinearLayoutManager(context)

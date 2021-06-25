@@ -1,6 +1,7 @@
 package com.example.memer.FRAGMENTS
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,8 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.AdapterFragmentYourPosts
+import com.example.memer.MODELS.PostState
+import com.example.memer.MODELS.PostThumbnailState
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentYourPostsBinding
@@ -25,6 +28,7 @@ class FragmentYourPosts : Fragment(), AdapterFragmentYourPosts.ItemClickListener
     private val viewModelUser:ViewModelUserInfo by activityViewModels()
     private lateinit var navController: NavController
 
+
     companion object{
         private const val TAG = "FragmentYourPosts"
     }
@@ -36,7 +40,10 @@ class FragmentYourPosts : Fragment(), AdapterFragmentYourPosts.ItemClickListener
         binding = FragmentYourPostsBinding.inflate(inflater,container,false)
 
         initRecyclerView()
-        viewModelUser.getUserPosts(viewModelUser.userLD.value !! . userId)
+        if(viewModelUser.postLD.value!! is PostThumbnailState.InitialLoading){
+            viewModelUser.getUserPosts(viewModelUser.userLD.value !! . userId)
+        }
+
         return binding.root
     }
 
@@ -62,9 +69,28 @@ class FragmentYourPosts : Fragment(), AdapterFragmentYourPosts.ItemClickListener
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = requireParentFragment().findNavController()
-        viewModelUser.postsLiveData.observe(viewLifecycleOwner, {
-            mAdapter.submitList(it)
-            mAdapter.notifyDataSetChanged()
+        viewModelUser.postLD.observe(viewLifecycleOwner, {
+            when (it) {
+                is PostThumbnailState.Loaded -> {
+                    Log.d(TAG, "initDataAndViewModel: Loaded ${it.post.size}")
+                    mAdapter.submitState(it)
+                    mAdapter.submitList(it.post)
+                    mAdapter.notifyDataSetChanged()
+                }
+                is PostThumbnailState.Refreshing -> {
+                    mAdapter.submitState(it)
+                    Log.d(TAG, "initDataAndViewModel: Refreshing")
+                }
+                is PostThumbnailState.LoadingMoreData -> {
+                    Log.d(TAG, "initDataAndViewModel: Loading More Data")
+                }
+                is PostThumbnailState.InitialLoading -> {
+                    Log.d(TAG, "initDataAndViewModel: Initializing")
+                }
+                is PostThumbnailState.LoadingFailed -> {
+                    Log.d(TAG, "initDataAndViewModel: Failed")
+                }
+            }
         })
 
     }

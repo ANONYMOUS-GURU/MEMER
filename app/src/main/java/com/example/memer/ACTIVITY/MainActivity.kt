@@ -3,6 +3,7 @@ package com.example.memer.ACTIVITY
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -23,7 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var navController: NavController
     private lateinit var viewModel:ViewModelUserInfo
-    private lateinit var viewModelPost:ViewModelHomePagePost
+    private lateinit var viewModelHomePage: ViewModelHomePagePost
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,10 +44,10 @@ class MainActivity : AppCompatActivity() {
 
         viewModel = ViewModelProvider(this,ViewModelUserFactory(userData,application)).get(ViewModelUserInfo::class.java)
 
-//        if(userData!=null){
+        if(userData!=null){
 //            val post  = intent.extras?.get("Post") as ArrayList<PostHomePage>
-//            viewModelPost = ViewModelProvider(this,ViewModelHomeFactory(userData.userId,post)).get(ViewModelHomePagePost::class.java)
-//        }
+            viewModelHomePage = ViewModelProvider(this,ViewModelHomeFactory(userData.userId)).get(ViewModelHomePagePost::class.java)
+        }
 
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController

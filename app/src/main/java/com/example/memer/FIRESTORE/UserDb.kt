@@ -24,7 +24,7 @@ object UserDb {
             UserElement.UserAvatarReference.value to imageReference.second
         )
 
-        val dataPublic = mapOf(UserElement.UserAvatarReference to imageReference.second)
+        val dataPublic = mapOf(UserElement.UserAvatarReference.value to imageReference.second)
 
         val db = FirebaseFirestore.getInstance()
         val batch = db.batch()

@@ -19,20 +19,22 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
     val dataLD: LiveData<UserProfileInfo>
         get() = dataMLD
 
-    private var post: ArrayList<PostContents2> = ArrayList()
-    private val postMLD: MutableLiveData<ArrayList<PostContents2>> = MutableLiveData()
-    val postLD: LiveData<ArrayList<PostContents2>>
+    private val dataPostThumbnail: ArrayList<PostContents2> = ArrayList()
+    private var post: PostThumbnailState = PostThumbnailState.InitialLoading
+    private val postMLD: MutableLiveData<PostThumbnailState> = MutableLiveData()
+    val postLD: LiveData<PostThumbnailState>
         get() = postMLD
 
-    private var postComplete: ArrayList<PostHomePage> = ArrayList()
-    private val postCompleteMLD: MutableLiveData<ArrayList<PostHomePage>> = MutableLiveData()
-    val postCompleteLD: LiveData<ArrayList<PostHomePage>>
+    private var dataPostComplete: ArrayList<PostHomePage> = ArrayList()
+    private var postComplete: PostState = PostState.InitialLoading
+    private val postCompleteMLD: MutableLiveData<PostState> = MutableLiveData()
+    val postCompleteLD: LiveData<PostState>
         get() = postCompleteMLD
 
 
     private var lastPostDocumentSnapshot: DocumentSnapshot? = null
     private var docLimit: Long = 20
-    var moreDataPresent: Boolean = true
+    var moreDataPresent: Boolean = false
 
     init {
         viewModelScope.launch {
@@ -40,48 +42,57 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
             Log.d(TAG, "init: ${data.postCount} ")
             withContext(Dispatchers.Main) {
                 dataMLD.value = data
+                postMLD.value = post
+                postCompleteMLD.value = postComplete
             }
             getInitPosts()
         }
     }
 
     private fun getInitPosts() {
+        moreDataPresent = false
         viewModelScope.launch {
             val docs: ArrayList<DocumentSnapshot> = PostDb.getUserPosts(
                 randomUserId, docLimit, lastPostDocumentSnapshot
             )
 
-            moreDataPresent = docs.size >= docLimit
+
             lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
             docs.forEach {
-                post.add(it.toPostContents2())
+                dataPostThumbnail.add(it.toPostContents2())
             }
             withContext(Dispatchers.Main) {
+                post = PostThumbnailState.Loaded(dataPostThumbnail)
                 postMLD.value = post
+                moreDataPresent = docs.size >= docLimit
             }
         }
     }
-    fun getMorePosts(){
+
+    fun getMorePosts() {
+        post = PostThumbnailState.LoadingMoreData(dataPostThumbnail)
+        postMLD.value = post
+        moreDataPresent = false
         viewModelScope.launch {
             val docs: ArrayList<DocumentSnapshot> = PostDb.getUserPosts(
                 randomUserId, docLimit, lastPostDocumentSnapshot
             )
 
-            moreDataPresent = docs.size >= docLimit
             lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
             docs.forEach {
-                post.add(it.toPostContents2())
+                dataPostThumbnail.add(it.toPostContents2())
             }
             withContext(Dispatchers.Main) {
+                post = PostThumbnailState.Loaded(dataPostThumbnail)
                 postMLD.value = post
+                moreDataPresent = docs.size >= docLimit
             }
         }
     }
 
     fun initListPost(userId: String) {
-        postComplete = ArrayList()
         viewModelScope.launch {
-            post.forEach {
+            dataPostThumbnail.forEach {
                 val userLike = PostDb.getUserLikes(
                     LikeType.PostLike,
                     it.postId,
@@ -90,9 +101,9 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
                 // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
                 val userBookMark = PostDb.getUserBookMarks(
                     it.postId,
-                    userId,
+                    userId
                 )
-                postComplete.add(
+                dataPostComplete.add(
                     PostHomePage(
                         postContents = it,
                         isLiked = userLike,
@@ -102,18 +113,26 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
                 )
             }
             withContext(Dispatchers.Main) {
+                postComplete = PostState.Loaded(dataPostComplete)
                 postCompleteMLD.value = postComplete
             }
 
         }
 
     }
+
     fun getMoreListPost(userId: String) {
+        post = PostThumbnailState.LoadingMoreData(dataPostThumbnail)
+        postMLD.value = post
+
+        postComplete = PostState.LoadingMoreData(dataPostComplete)
+        postCompleteMLD.value = postComplete
+        moreDataPresent = false
         viewModelScope.launch {
             val docs = PostDb.getPostsUsers(lastPostDocumentSnapshot, docLimit, userId)
-            moreDataPresent = docs.size >= docLimit
+
             docs.forEach {
-                post.add(it.toPostContents2())
+                dataPostThumbnail.add(it.toPostContents2())
                 val userLike = PostDb.getUserLikes(
                     LikeType.PostLike,
                     it.getString("postId")!!,
@@ -124,7 +143,7 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
                     it.getString("postId")!!,
                     userId,
                 )
-                postComplete.add(
+                dataPostComplete.add(
                     PostHomePage(
                         postContents = it.toPostContents2(),
                         isLiked = userLike,
@@ -134,8 +153,13 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
                 )
             }
             withContext(Dispatchers.Main) {
+                post = PostThumbnailState.Loaded(dataPostThumbnail)
+                postComplete = PostState.Loaded(dataPostComplete)
+
                 postMLD.value = post
                 postCompleteMLD.value = postComplete
+
+                moreDataPresent = docs.size >= docLimit
             }
         }
     }
@@ -146,7 +170,7 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
         userId: String,
         username: String,
         userAvatarReference: String?,
-        nameOfUser:String,
+        nameOfUser: String,
         postOwnerId: String,
         incrementLike: Boolean
     ) {
@@ -161,11 +185,19 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
         )
         PostDb.updateLikes(mLike = mLike, incrementLike = incrementLike)
 
-        postComplete[position].isLiked = !postComplete[position].isLiked
+        dataPostComplete[position].isLiked = !dataPostComplete[position].isLiked
+        postComplete = PostState.Loaded(dataPostComplete)
         postCompleteMLD.value = postComplete
     }
 
-    fun bookMarkClicked(position: Int, userId: String, postId: String, postOwnerId: String,postOwnerUsername:String,postOwnerAvatarReference:String?) {
+    fun bookMarkClicked(
+        position: Int,
+        userId: String,
+        postId: String,
+        postOwnerId: String,
+        postOwnerUsername: String,
+        postOwnerAvatarReference: String?
+    ) {
 
         val bookMark = Bookmarks(
             bookmarkId = userId + postId,
@@ -176,28 +208,30 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
             postOwnerAvatarReference = postOwnerAvatarReference
         )
 
-        if (postComplete[position].isBookmarked) {
-            postComplete[position].isBookmarked = false
-            PostDb.bookMarkPost(bookMark = bookMark,undoBookMark = true)
+        if (dataPostComplete[position].isBookmarked) {
+            dataPostComplete[position].isBookmarked = false
+            PostDb.bookMarkPost(bookMark = bookMark, undoBookMark = true)
         } else {
-            postComplete[position].isBookmarked = true
-            PostDb.bookMarkPost(bookMark = bookMark,undoBookMark = false)
+            dataPostComplete[position].isBookmarked = true
+            PostDb.bookMarkPost(bookMark = bookMark, undoBookMark = false)
         }
 
+        postComplete = PostState.Loaded(dataPostComplete)
         postCompleteMLD.value = postComplete
     }
 
     fun editPost(
         postId: String,
-        postCaption:String,
+        postCaption: String,
         position: Int
-    ){
+    ) {
         PostDb.editPost(
             postCaption = postCaption,
             postId = postId
         )
 
-        postComplete[position].postContents.postDescription = postCaption
+        dataPostComplete[position].postContents.postDescription = postCaption
+        postComplete = PostState.Loaded(dataPostComplete)
         postCompleteMLD.value = postComplete
 
     }

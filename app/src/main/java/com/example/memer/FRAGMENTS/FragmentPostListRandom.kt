@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.HomePageAdapter
 import com.example.memer.HELPERS.LoadingDialog
+import com.example.memer.MODELS.PostState
 import com.example.memer.NavGraphDirections
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelHomePagePost
@@ -85,11 +86,32 @@ class FragmentPostListRandom : Fragment() , HomePageAdapter.ItemClickListener,Ho
         initRecyclerView()
         Log.d(TAG, "initDataAndViewModel: HEre")
         viewModel.postCompleteLD.observe(viewLifecycleOwner, {
-            Log.d(TAG, "onCreateView: ${it.size}")
-            homePageAdapter.submitList(it)
-            homePageAdapter.notifyDataSetChanged()
+            when (it) {
+                is PostState.Loaded -> {
+                    Log.d(TAG, "initDataAndViewModel: Loaded ${it.post.size}")
+                    homePageAdapter.submitState(it)
+                    homePageAdapter.submitList(it.post)
+                    homePageAdapter.notifyDataSetChanged()
+                }
+                is PostState.Refreshing -> {
+                    homePageAdapter.submitState(it)
+                    Log.d(TAG, "initDataAndViewModel: Refreshing")
+                }
+                is PostState.LoadingMoreData -> {
+                    Log.d(TAG, "initDataAndViewModel: Loading More Data")
+                }
+                is PostState.InitialLoading -> {
+
+                    Log.d(TAG, "initDataAndViewModel: Initializing")
+                }
+                is PostState.LoadingFailed -> {
+                    Log.d(TAG, "initDataAndViewModel: Failed")
+                }
+            }
         })
-        viewModel.initListPost(viewModelUser.userLD.value !!.userId)
+        if(viewModel.postCompleteLD.value!! is PostState.InitialLoading) {
+            viewModel.initListPost(viewModelUser.userLD.value !!.userId)
+        }
     }
 
     private fun initRecyclerView() {
