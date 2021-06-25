@@ -4,6 +4,7 @@ import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.FIRESTORE.UserDb
 import com.example.memer.MODELS.Comment.Companion.toComment
+import com.example.memer.MODELS.LikeType
 import com.example.memer.MODELS.LikedBy
 import com.example.memer.MODELS.LikedBy.Companion.toLikedBy
 import com.example.memer.MODELS.PostContents2
@@ -20,7 +21,7 @@ class ViewModelLikes(private val post: PostContents2,private val userId:String) 
         get() = likeListMLD
 
     private var lastSnapshot: DocumentSnapshot? = null
-    private val docLimit = 15
+    private val docLimit = 15L
 
     private var moreDataPresent = false
     val isMoreDataPresent:Boolean
@@ -33,16 +34,13 @@ class ViewModelLikes(private val post: PostContents2,private val userId:String) 
 
     fun getLikes() {
         viewModelScope.launch {
-            val docs = PostDb.getAllLikes(post.postId, lastSnapshot, docLimit.toLong())
+            val docs = PostDb.getAllLikes(likeType = LikeType.PostLike , likeTypeId = post.postId, lastDocument = lastSnapshot, docLimit = docLimit)
             if(docs.size > 0 ){
                 lastSnapshot = docs[docs.size - 1]
-                moreDataPresent = docs.size == docLimit
+                moreDataPresent = docs.size.toLong() == docLimit
                 docs.forEach {
                     val likedBy = it.toLikedBy()
-                    if (likedBy != null) {
-                        likedBy.isFollowing = true  // TODO(GET FOLLOWING STATUS)
-                        likeList.add(likedBy)
-                    }
+                    likeList.add(likedBy !!)
                 }
                 withContext(Dispatchers.Main) {
                     likeListMLD.value = likeList

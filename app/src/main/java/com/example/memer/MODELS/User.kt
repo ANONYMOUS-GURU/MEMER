@@ -9,53 +9,43 @@ import kotlinx.android.parcel.Parcelize
 import java.lang.reflect.Array.getInt
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.sign
+
 @Parcelize
 data class UserData(
     val userId: String,
     val username: String,
     val nameOfUser: String,
+
     val signInType: String,
     val phoneNumber: String?,
     val bio: String,
     var userProfilePicReference: String? = null,
+
     val userPostCount : Long,
-    val userFollowersCount:Long,
-    val userFollowingCount:Long,
     var userAvatarReference: String? = null,
-    @Exclude @set:Exclude @get:Exclude var isAuthenticated: Boolean = false,
-    @Exclude @set:Exclude @get:Exclude var isNewUser: Boolean = true,
+    val userGlobalLikes:Long,
+
     @ServerTimestamp
-    val time : Date? = null
+    val createdAt : Date? = null,
+    @ServerTimestamp
+    val updatedAt:Date? = null
 ):Parcelable {
     companion object {
         fun DocumentSnapshot.toUserData(): UserData? {
             return UserData(
-                getString("userId")!!,
-                getString("username")!!,
-                getString("nameOfUser")!!,
-                getString("signInType")!!,
-                getString("phoneNumber"),
-                getString("bio")!!,
-                getString("userProfilePicReference"),
-                get("userPostCount") as Long,
-                get("userFollowersCount") as Long,
-                get("userFollowingCount") as Long,
-                getString("userAvatarReference")
-            )
-        }
-        fun UserBasicInfo.toUserData(): UserData {
-            return UserData(
-                userId = userId,
-                username = username,
-                nameOfUser = nameOfUser,
-                signInType = signInType,
-                phoneNumber = phoneNumber,
-                bio = "",
-                userProfilePicReference = null,
-                userPostCount = 0,
-                userFollowersCount = 0,
-                userFollowingCount = 0,
-                userAvatarReference = null
+                userId = getString("userId")!!,
+                username = getString("username")!!,
+                nameOfUser = getString("nameOfUser")!!,
+
+                signInType = getString("signInType")!!,
+                phoneNumber = getString("phoneNumber"),
+                bio = getString("bio")!!,
+                userProfilePicReference = getString("userProfilePicReference"),
+
+                userPostCount = getLong("userPostCount") !!,
+                userAvatarReference = getString("userAvatarReference"),
+                userGlobalLikes = getLong("userGlobalLikes")!!
             )
         }
     }
@@ -73,47 +63,33 @@ data class UserProfileInfo(
     var nameOfUser:String,
     var username:String,
     var postCount:Long,
-    var userId:String?,
-    var followersCount:Long,
-    var followingCount:Long,
+    var userId:String,
     var bio:String,
-    var userAvatarReference:String?
+    var userAvatarReference:String?,
+    val userGlobalLikes:Long,
 ){
     companion object {
         fun UserData.toUserProfileInfo():UserProfileInfo{
-            return UserProfileInfo(nameOfUser,username,userPostCount,userId,
-                userFollowersCount,userFollowingCount,bio,userAvatarReference)
+            return UserProfileInfo(
+                nameOfUser = nameOfUser,
+                username = username,
+                postCount = userPostCount,
+                userId = userId ,
+                bio = bio,
+                userAvatarReference = userAvatarReference,
+                userGlobalLikes = userGlobalLikes
+            )
         }
 
         fun DocumentSnapshot.toUserProfileInfo():UserProfileInfo{
             return UserProfileInfo(
-                getString("nameOfUser")!!,
-                getString("username")!!,
-                getLong("postCount")!!,
-                getString("userId")!!,
-                getLong("followersCount")!!,
-                getLong("followingCount")!!,
-                getString("bio")!!,
-                getString("userAvatarReference"),
-            )
-        }
-    }
-}
-
-data class LikedBy(
-    val username:String,
-    val userAvatarReference: String?,
-    val nameOfUser:String,
-    val userId:String,
-    var isFollowing:Boolean = false
-){
-    companion object{
-        fun DocumentSnapshot.toLikedBy():LikedBy?{
-            return LikedBy(
-                getString("username")!!,
-                getString("userAvatarReference"),
-                getString("nameOfUser")!!,
-                getString("userId")!!
+                nameOfUser = getString("nameOfUser")!!,
+                username = getString("username")!!,
+                postCount = getLong("userPostCount")!!,
+                userId = getString("userId")!!,
+                bio = getString("bio")!!,
+                userAvatarReference = getString("userAvatarReference"),
+                userGlobalLikes = getLong("userGlobalLikes")!!
             )
         }
     }
@@ -122,7 +98,8 @@ data class LikedBy(
 data class UserTextEditInfo(
     val username: String,
     val nameOfUser: String,
-    val bio:String
+    val bio:String,
+    var userAvatarReference: String?
 )
 
 data class UserEditInfo(
@@ -134,8 +111,12 @@ data class UserEditInfo(
 ){
     companion object{
         fun UserData.toUserEditInfo():UserEditInfo{
-            return UserEditInfo(username, nameOfUser, bio, userAvatarReference,
-                userProfilePicReference)
+            return UserEditInfo(username = username,
+                nameOfUser = nameOfUser,
+                bio = bio,
+                userAvatarReference = userAvatarReference,
+                userProfilePicReference = userProfilePicReference
+            )
         }
     }
 }

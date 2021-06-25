@@ -132,8 +132,6 @@ class FragmentProfile : Fragment(), View.OnClickListener {
                 bioProfilePage.text = user.bio
                 usernameProfilePage.text = user.username
                 nameOfUserProfilePage.text = user.nameOfUser
-                profileFollowingCount.text = user.userFollowersCount.toString()
-                profileFollowersCount.text = user.userFollowersCount.toString()
                 profilePostCount.text = user.userPostCount.toString()
             }
             val requestOptionsAvatar = RequestOptions()

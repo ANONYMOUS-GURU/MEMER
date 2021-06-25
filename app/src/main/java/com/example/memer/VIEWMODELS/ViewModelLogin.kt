@@ -4,12 +4,11 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.UserDb
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.USER_COLLECTION
 import com.example.memer.HELPERS.InternalStorage
+import com.example.memer.MODELS.FireStoreCollection
 import com.example.memer.MODELS.LoginState
 import com.example.memer.MODELS.UserData
 import com.example.memer.MODELS.UserTextEditInfo
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.PhoneAuthCredential
@@ -19,19 +18,16 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.lang.Exception
-import kotlin.math.log
-import kotlin.math.sign
 
 
 class ViewModelLogin(application: Application) : AndroidViewModel(application) {
 
     var userId:String? = Firebase.auth.currentUser?.uid
 
-    var userTextEditInfo: UserTextEditInfo = UserTextEditInfo("", "", "")
+    var userTextEditInfo: UserTextEditInfo = UserTextEditInfo("", "", "",null)
 
     private var imageProfileRef:String? = null
-    private var signInType:String = ""
+    private var signInType:String = ACCESS_GOOGLE
 
     private var imageRef: String? = null
     private val imageRefMLD= MutableLiveData<String?>()
@@ -54,7 +50,6 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
     }
 
     fun signInWithPhoneAuthCredential(credential: PhoneAuthCredential) {
-        signInType = ACCESS_PHONE
 
         loginState = LoginState.TryingLogIn(signInType)
         loginStateMLD.value = loginState
@@ -65,7 +60,7 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
                 Log.d(TAG, "signInWithCredential:success")
                 val user = mAuth.currentUser
                 userId  = user!!.uid
-                val docIdRef = FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(userId !!)
+                val docIdRef = FirebaseFirestore.getInstance().collection(FireStoreCollection.User.value).document(userId !!)
                 docIdRef.get().addOnCompleteListener {
                     if (it.isSuccessful) {
                         val document = it.result
@@ -94,7 +89,6 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
         }
     }
     fun firebaseAuthWithGoogle(idToken: String) {
-        signInType = ACCESS_GOOGLE
         loginState = LoginState.TryingLogIn(signInType)
         loginStateMLD.value = loginState
         val credential = GoogleAuthProvider.getCredential(idToken, null)
@@ -104,7 +98,7 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
                     Log.d(TAG, "signInWithCredential:success")
                     val user = mAuth.currentUser
                     userId  = user!!.uid
-                    val docIdRef = FirebaseFirestore.getInstance().collection(USER_COLLECTION).document(userId !!)
+                    val docIdRef = FirebaseFirestore.getInstance().collection(FireStoreCollection.User.value).document(userId !!)
                     docIdRef.get().addOnCompleteListener {
                         if (it.isSuccessful) {
                             val document = it.result
@@ -169,21 +163,22 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+    
     fun writeNewUser(userTextEditInfo: UserTextEditInfo){
         viewModelScope.launch {
+            Log.d(TAG, "writeNewUser: $signInType")
             InternalStorage.writeUser(
                 UserData(
                     userId = userId!!,
                     userPostCount = 0,
-                    userFollowingCount = 0,
-                    userFollowersCount = 0,
                     userProfilePicReference = imageProfileRef,
-                    userAvatarReference = imageRef,
+                    userAvatarReference = userTextEditInfo.userAvatarReference,
                     username = userTextEditInfo.username,
                     nameOfUser = userTextEditInfo.nameOfUser,
                     bio = userTextEditInfo.bio,
                     signInType = signInType,
-                    phoneNumber = if (signInType == ACCESS_PHONE) Firebase.auth.currentUser?.phoneNumber else ""
+                    phoneNumber = if (signInType == ACCESS_PHONE) Firebase.auth.currentUser?.phoneNumber else "",
+                    userGlobalLikes = 0L
                 ),
                 getApplication()
             )

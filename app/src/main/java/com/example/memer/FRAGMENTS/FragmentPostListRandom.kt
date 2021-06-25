@@ -125,14 +125,14 @@ class FragmentPostListRandom : Fragment() , HomePageAdapter.ItemClickListener,Ho
         Log.d("FragmentHomePage", "onLikeClick $position")
 
         viewModel.likeClicked(
-            position,
-            homePageAdapter.getPost(position).postContents.postId,
-            viewModelUser.userLD.value!!.userId,
-            viewModelUser.userLD.value!!.username,
-            viewModelUser.userLD.value!!.userAvatarReference,
-            viewModelUser.userLD.value!!.nameOfUser,
-            homePageAdapter.getPost(position).postContents.postOwnerId,
-            homePageAdapter.getPost(position).isLiked == 0L
+            position = position,
+            postId = homePageAdapter.getPost(position).postContents.postId,
+            userId = viewModelUser.userLD.value!!.userId,
+            username = viewModelUser.userLD.value!!.username,
+            userAvatarReference = viewModelUser.userLD.value!!.userAvatarReference,
+            nameOfUser = viewModelUser.userLD.value!!.nameOfUser,
+            postOwnerId = homePageAdapter.getPost(position).postContents.postOwnerId,
+            incrementLike = !homePageAdapter.getPost(position).isLiked
         )
 
     }
@@ -144,9 +144,11 @@ class FragmentPostListRandom : Fragment() , HomePageAdapter.ItemClickListener,Ho
     override fun onBookMarkClick(position: Int) {
         Log.d(TAG, "onBookMarkClick $position")
         viewModel.bookMarkClicked(
-            position, viewModelUser.userLD.value!!.userId,
-            homePageAdapter.getPost(position).postContents.postId,
-            homePageAdapter.getPost(position).postContents.postOwnerId
+            position = position, userId = viewModelUser.userLD.value!!.userId,
+            postId = homePageAdapter.getPost(position).postContents.postId,
+            postOwnerId = homePageAdapter.getPost(position).postContents.postOwnerId,
+            postOwnerUsername = homePageAdapter.getPost(position).postContents.username,
+            postOwnerAvatarReference = homePageAdapter.getPost(position).postContents.userAvatarReference
         )
     }
     override fun onUserClick(position: Int) {
@@ -165,7 +167,6 @@ class FragmentPostListRandom : Fragment() , HomePageAdapter.ItemClickListener,Ho
         val action = NavGraphDirections.actionGlobalFragmentLikes(homePageAdapter.getPost(position).postContents)
         navController.navigate(action)
     }
-
 
     override fun onClick(v: View?) {
 

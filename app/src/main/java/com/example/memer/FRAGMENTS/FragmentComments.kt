@@ -1,6 +1,7 @@
 package com.example.memer.FRAGMENTS
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -52,6 +53,7 @@ class FragmentComments : Fragment() , AdapterComments.ItemClickListener , View.O
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        Log.d(TAG, "onCreateView: ")
         binding = FragmentCommentsBinding.inflate(inflater,container,false)
         requireActivity().bottomNavigationView.visibility = View.GONE
 
@@ -88,6 +90,7 @@ class FragmentComments : Fragment() , AdapterComments.ItemClickListener , View.O
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        Log.d(TAG, "onViewCreated: ")
         navController= Navigation.findNavController(view)
         initViewModel()
         binding.commentPageToolbar.setupWithNavController(navController)
@@ -182,5 +185,8 @@ class FragmentComments : Fragment() , AdapterComments.ItemClickListener , View.O
     companion object{
         private const val TAG = "FragmentComments"
     }
+
+
+
 
 }

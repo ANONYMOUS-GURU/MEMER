@@ -1,23 +1,8 @@
 package com.example.memer.FIRESTORE
 
 import android.util.Log
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.BOOKMARK_COLLECTION
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.COMMENTS_COLLECTION
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.COMMENT_REPLY_COLLECTION
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.LIKES_COLLECTION
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.POST_COLLECTION
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.USER_COLLECTION
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.USER_POST_COLLECTION
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.USER_RELATION_COLLECTION
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.bookMarkCountElement
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.commentCountElement
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.commentReplyCountElement
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.createdAtElement
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.likeCountElement
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.nameOfUserElement
-import com.example.memer.HELPERS.GLOBAL_INFORMATION.userIdElement
-import com.example.memer.MODELS.Comment
-import com.example.memer.MODELS.PostContents2
+
+import com.example.memer.MODELS.*
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.*
 import kotlinx.coroutines.tasks.await
@@ -28,10 +13,28 @@ object PostDb {
     private val CACHE = Source.CACHE
     private val SERVER = Source.SERVER
 
-    fun removePost(postId: String) {
+    fun removePost(post: PostContents2, userId: String) {
         val db = FirebaseFirestore.getInstance()
     }
 
+    fun archivePost(post: PostContents2, userId: String) {
+
+    }
+
+    fun editPost(postCaption: String, postId: String) {
+
+    }
+
+    fun report(reports: Reports) {
+        when (reports) {
+            is Reports.CommentReport -> {
+            }
+            is Reports.PostReport -> {
+            }
+            is Reports.UserReport -> {
+            }
+        }
+    }
 
     //TODO(EVERYTHING ON ADD POST INSIDE A CLOUD FUNCTION IN AWAIT FASHION AND FAIL IF NO INTERNET)
     fun addPost(
@@ -41,52 +44,55 @@ object PostDb {
         userAvatarReference: String?,
         postDesc: String,
         postId: String,
-        isPublic:Boolean = true
     ): Task<Void> {
 
-        val updates = HashMap<String, Any>()
-        updates["timestamp"] = FieldValue.serverTimestamp()
 
         val post = PostContents2(
-            postResource = imageReference,
             postId = postId,
             postOwnerId = userId,
+
+            postResource = imageReference,
             postDescription = postDesc,
             postTypeImage = true,
-            likeCount = 0,
-            commentCount = 0,
+
             username = username,
             userAvatarReference = userAvatarReference,
-            public = isPublic,
-            bookMarkCount = 0
+
+            likeCount = 0,
+            commentCount = 0,
+            bookMarkCount = 0,
+            reportCount = 0
+
         )
 
         val db = FirebaseFirestore.getInstance()
         val batch = FirebaseFirestore.getInstance().batch()
-        batch.set(db.collection(POST_COLLECTION).document(postId), post)
+        batch.set(db.collection(FireStoreCollection.Post.value).document(postId), post)
+
+        // SHOULD BE DONE BY A Cloud Function the incrementing part
         batch.set(
-            db.collection(USER_COLLECTION).document(userId)
-                .collection(USER_POST_COLLECTION).document(postId), post
-        )
-        batch.set(
-            db.collection(USER_COLLECTION).document(userId),
-            hashMapOf("userPostCount" to FieldValue.increment(1)), SetOptions.merge()
+            db.collection(FireStoreCollection.User.value).document(userId),
+            hashMapOf(UserElement.UserPostCount.value to FieldValue.increment(1)),
+            SetOptions.merge()
         )
 
         return batch.commit()
+
+
     }
 
     //TODO(GET POSTS IMPLEMENT USING CLOUD FUNCTION FOR GETTING USER LIKES BOOKMARKS AND GETTING IT IN ACCORDANCE WITH USER RELATIONS ETC.)
-    suspend fun getPosts(lastDocument: DocumentSnapshot?, docLimit: Long,userId: String)
-    : ArrayList<DocumentSnapshot> {
+    suspend fun getPosts(lastDocument: DocumentSnapshot?, docLimit: Long)
+            : ArrayList<DocumentSnapshot> {
         val db = FirebaseFirestore.getInstance()
 
-
         val mDocuments = if (lastDocument == null)
-            db.collection(POST_COLLECTION).orderBy("time", Query.Direction.DESCENDING)
+            db.collection(FireStoreCollection.Post.value)
+                .orderBy(PostElement.CreatedAt.value, Query.Direction.DESCENDING)
                 .limit(docLimit).get().await().documents
         else
-            db.collection(POST_COLLECTION).orderBy("time", Query.Direction.DESCENDING)
+            db.collection(FireStoreCollection.Post.value)
+                .orderBy(PostElement.CreatedAt.value, Query.Direction.DESCENDING)
                 .startAfter(lastDocument).limit(docLimit).get()
                 .await().documents
         Log.d(TAG, "getPosts: ${mDocuments.size}")
@@ -108,15 +114,15 @@ object PostDb {
         val db = FirebaseFirestore.getInstance()
 
         val mDocuments = if (lastDocument == null)
-            db.collection(USER_COLLECTION).document(userId).collection(USER_POST_COLLECTION)
-                .orderBy(
-                    "time", Query.Direction.DESCENDING
+            db.collection(FireStoreCollection.Post.value)
+                .whereEqualTo(PostElement.PostOwnerId.value, userId).orderBy(
+                    PostElement.CreatedAt.value, Query.Direction.DESCENDING
                 )
                 .limit(docLimit).get().await().documents
         else
-            db.collection(USER_COLLECTION).document(userId).collection(USER_POST_COLLECTION)
-                .orderBy(
-                    "time", Query.Direction.DESCENDING
+            db.collection(FireStoreCollection.Post.value)
+                .whereEqualTo(PostElement.PostOwnerId.value, userId).orderBy(
+                    PostElement.CreatedAt.value, Query.Direction.DESCENDING
                 )
                 .startAfter(lastDocument).limit(docLimit).get().await().documents
 
@@ -130,182 +136,124 @@ object PostDb {
     }
 
 
-    fun updateLikesPost(
-        postId: String,
-        postOwnerId: String,
-        userId: String,
-        username:String,
-        userAvatarReference:String?,
-        nameOfUser:String,
+    fun updateLikes(
+        mLike: Likes,
         incrementLike: Boolean
     ) {
         val db = FirebaseFirestore.getInstance()
 
-        val batch = FirebaseFirestore.getInstance().batch()         // TODO(APART FROM USER_COLLECTION EVERYTHING ELSE SHOULD BE HANDLED BY CLOUD FUNCTION FOR SECURITY)
+        val batch = db.batch()
+        // TODO(APART FROM USER_COLLECTION EVERYTHING ELSE SHOULD BE HANDLED BY CLOUD FUNCTION FOR SECURITY)
         if (incrementLike) {
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId).collection(LIKES_COLLECTION)
-                    .document(userId),
-                hashMapOf("userId" to userId,"username" to username,"userAvatarReference" to userAvatarReference,
-                    likeCountElement to 1, createdAtElement to FieldValue.serverTimestamp() , nameOfUserElement to nameOfUser),
-                SetOptions.merge()
-            )
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId),
-                hashMapOf(likeCountElement to FieldValue.increment(1)), SetOptions.merge()
-            )
-            batch.set(
-                db.collection(USER_COLLECTION).document(userId).collection(USER_RELATION_COLLECTION)  // TODO(CLOUD FUNCTION TRIGGERED ON THIS WRITE)
-                    .document(postOwnerId).collection(
-                        LIKES_COLLECTION
-                    ).document(postId),
-                hashMapOf(likeCountElement to 1, createdAtElement to FieldValue.serverTimestamp()),
-                SetOptions.merge()
-            )
-            batch.set(
-                db.collection(USER_COLLECTION).document(postOwnerId).collection(
-                    USER_POST_COLLECTION
-                ).document(postId),
-                hashMapOf(likeCountElement to FieldValue.increment(1)),
-                SetOptions.merge()
-            )
+            Log.d(TAG, "updateLikes: Incrementing Like")
+            batch.set(db.collection(FireStoreCollection.Like.value).document(mLike.likeId), mLike)
+            if (mLike.likeType == LikeType.CommentLike.value) {
+                batch.update(
+                    db.collection(FireStoreCollection.Comment.value).document(mLike.likeTypeId),
+                    CommentElement.CommentLikeCount.value, FieldValue.increment(1)
+                )
+            } else {
+                batch.update(
+                    db.collection(FireStoreCollection.Post.value).document(mLike.likeTypeId),
+                    PostElement.LikeCount.value, FieldValue.increment(1)
+                )
+            }
         } else {
-            batch.delete(
-                db.collection(POST_COLLECTION).document(postId).collection(LIKES_COLLECTION)
-                    .document(userId)
-            )
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId),
-                hashMapOf(likeCountElement to FieldValue.increment(-1)), SetOptions.merge()
-            )
-            batch.delete(
-                db.collection(USER_COLLECTION).document(userId).collection(USER_RELATION_COLLECTION)   // TODO(CLOUD FUNCTION TRIGGERED ON THIS WRITE)
-                    .document(postOwnerId).collection(
-                        LIKES_COLLECTION
-                    ).document(postId)
-            )
-            batch.set(
-                db.collection(USER_COLLECTION).document(postOwnerId).collection(
-                    USER_POST_COLLECTION
-                ).document(postId),
-                hashMapOf(likeCountElement to FieldValue.increment(-1)),
-                SetOptions.merge()
-            )
+            Log.d(TAG, "updateLikes: Decrementing Like")
+            batch.delete(db.collection(FireStoreCollection.Like.value).document(mLike.likeId))
+            if (mLike.likeType == LikeType.CommentLike.value) {
+                batch.update(
+                    db.collection(FireStoreCollection.Comment.value).document(mLike.likeTypeId),
+                    CommentElement.CommentLikeCount.value, FieldValue.increment(-1)
+                )
+            } else {
+                batch.update(
+                    db.collection(FireStoreCollection.Post.value).document(mLike.likeTypeId),
+                    PostElement.LikeCount.value, FieldValue.increment(-1)
+                )
+            }
         }
+
+        // INSIDE CLOUD FUNCTION
+
+
+        // ALSO ADD A FUNCTION TO INCREASE USER GLOBAL LIKES / CLAPS
+
         batch.commit()
     }
 
     // TODO(THIS FUNCTION WILL BE DELETED AS LIKES WILL BE RETRIEVED BY A CLOUD FUNCTION ALONG WITH GET POSTS)
     suspend fun getUserLikes(
-        postId: String,
+        likeType: LikeType,
+        likeTypeId: String,
         userId: String,
-        postOwnerId: String
-    ): Long {
+    ): Boolean {
         val db = FirebaseFirestore.getInstance()
         val userLike =
-            db.collection(USER_COLLECTION).document(userId).collection(USER_RELATION_COLLECTION)
-                .document(postOwnerId).collection(LIKES_COLLECTION).document(postId).get().await()
-        return userLike.getLong(likeCountElement) ?: 0
+            db.collection(FireStoreCollection.Like.value)
+                .whereEqualTo(LikeElement.LikeType.value, likeType.value)
+                .whereEqualTo(LikeElement.UserId.value, userId)
+                .whereEqualTo(LikeElement.LikeTypeId.value, likeTypeId)
+                .get().await().documents.size
+
+        return userLike != 0
     }
 
     suspend fun getUserBookMarks(
         postId: String,
         userId: String,
-        postOwnerId: String
     ): Boolean {
         val db = FirebaseFirestore.getInstance()
-        val userBookMark =
-            db.collection(USER_COLLECTION).document(userId).collection(USER_RELATION_COLLECTION)
-                .document(postOwnerId).collection(BOOKMARK_COLLECTION).document(postId).get().await()
-        val ret =  userBookMark.getLong(bookMarkCountElement) ?: 0
-        return ret == 1L
+        val userBookmark =
+            db.collection(FireStoreCollection.BookMark.value)
+                .whereEqualTo(BookMarkElement.UserId.value, userId).whereEqualTo(BookMarkElement.PostId.value, postId)
+                .get().await().documents.size
+
+        return userBookmark != 0
     }
 
     fun addCommentPost(
-        comment:Comment,
-        postId: String,
-        userId: String,
-        postOwnerId: String,
-        commentParentId: String? = null
+        comment: Comment,
     ) {
         val db = FirebaseFirestore.getInstance()
 
         val batch = db.batch()
 
+
         batch.set(
-            db.collection(POST_COLLECTION).document(postId),
-            hashMapOf(commentCountElement to FieldValue.increment(1)),
-            SetOptions.merge()
-        )
-        batch.set(
-            db.collection(USER_COLLECTION).document(postOwnerId).collection(
-                USER_POST_COLLECTION
-            ).document(postId), hashMapOf(commentCountElement to FieldValue.increment(1)), SetOptions.merge()
-        )
-        batch.set(
-            db.collection(USER_COLLECTION).document(userId).collection(                  // TODO(THIS WRITE TRIGGERS EVERY OTHER WRITE IN DB USING CLOUD FUNCTIONS)
-                USER_RELATION_COLLECTION
-            ).document(postOwnerId).collection(COMMENTS_COLLECTION).document(postId),
-            hashMapOf(comment.commentId to comment), SetOptions.merge()
+            db.collection(FireStoreCollection.Comment.value).document(comment.commentId),
+            comment
         )
 
-        if (commentParentId == null) {
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                    .document(comment.commentId), comment,
-                SetOptions.merge()
-            )
-        } else {
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                    .document(commentParentId)
-                    .collection(COMMENT_REPLY_COLLECTION).document(comment.commentId),
-                comment,
-                SetOptions.merge()
-            )
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                    .document(commentParentId),
-                hashMapOf(commentReplyCountElement to FieldValue.increment(1)), SetOptions.merge()
+        // TODO(below calls can be by CLOUD FUNCTIONS)
+
+        if (comment.commentParentId != null) {
+            batch.update(
+                db.collection(FireStoreCollection.Comment.value).document(comment.commentParentId),
+                CommentElement.CommentReplyCount.value, FieldValue.increment(1)
             )
         }
+
+        batch.update(
+            db.collection(FireStoreCollection.Post.value).document(comment.commentPostId),
+            PostElement.CommentCount.value, FieldValue.increment(1)
+        )
 
         batch.commit()
     }
 
     fun editComment(
-        postId: String,
-        userId: String,
-        postOwnerId: String,
         commentContent: String,
-        commentParentId: String? = null,
-        commentId:String
+        commentId: String
     ) {
 
         val db = FirebaseFirestore.getInstance()
         val batch = db.batch()
-
         batch.update(
-            db.collection(USER_COLLECTION).document(userId).collection(                     // TODO(THIS WRITE TRIGGERS EVERY OTHER WRITE IN DB USING CLOUD FUNCTIONS)
-                USER_RELATION_COLLECTION
-            ).document(postOwnerId).collection(COMMENTS_COLLECTION).document(postId), "$commentId.commentContent" , commentContent
+            db.collection(FireStoreCollection.Comment.value)
+                .document(commentId), CommentElement.CommentContent.value, commentContent
         )
 
-        if (commentParentId == null) {
-            batch.update(
-                db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                    .document(commentId), "commentContent" , commentContent
-
-            )
-        } else {
-            batch.update(
-                db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                    .document(commentParentId)
-                    .collection(COMMENT_REPLY_COLLECTION).document(commentId),
-                "commentContent" , commentContent
-            )
-        }
-        Log.d(TAG, "editComment: Ran")
         batch.commit()
     }
 
@@ -318,14 +266,14 @@ object PostDb {
         val db = FirebaseFirestore.getInstance()
 
         val mDocuments = if (lastDocument == null)
-            db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                .orderBy("time", Query.Direction.DESCENDING)
+            db.collection(FireStoreCollection.Comment.value).whereEqualTo(CommentElement.CommentPostId.value, postId)
+                .whereEqualTo(CommentElement.CommentParentId.value,null)
+                .orderBy(CommentElement.CreatedAt.value, Query.Direction.ASCENDING)
                 .limit(docLimit).get().await().documents
         else
-            db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                .orderBy("time", Query.Direction.DESCENDING)
+            db.collection(FireStoreCollection.Comment.value).whereEqualTo(CommentElement.CommentPostId.value, postId)
+                .orderBy(CommentElement.CreatedAt.value, Query.Direction.ASCENDING)
                 .startAfter(lastDocument).limit(docLimit).get().await().documents
-
 
         val mData = ArrayList<DocumentSnapshot>()
         mDocuments.forEach {
@@ -337,7 +285,6 @@ object PostDb {
 
     //TODO(DEFINE POST TYPE{PUBLIC,PRIVATE} AND GIVE """""READ ONLY SECURITY ACCESS""""" AS PER THAT AND FOLLOWER/FOLLOWING)
     suspend fun getRepliesCommentsPost(
-        postId: String,
         commentParentId: String,
         lastDocument: DocumentSnapshot?,
         docLimit: Long
@@ -345,14 +292,12 @@ object PostDb {
         val db = FirebaseFirestore.getInstance()
 
         val mDocuments = if (lastDocument == null)
-            db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                .document(commentParentId).collection(COMMENT_REPLY_COLLECTION)
-                .orderBy("time", Query.Direction.ASCENDING)
+            db.collection(FireStoreCollection.Comment.value).whereEqualTo(CommentElement.CommentParentId.value, commentParentId)
+                .orderBy(CommentElement.CreatedAt.value, Query.Direction.ASCENDING)
                 .limit(docLimit).get().await().documents
         else
-            db.collection(POST_COLLECTION).document(postId).collection(COMMENTS_COLLECTION)
-                .document(commentParentId).collection(COMMENT_REPLY_COLLECTION)
-                .orderBy("time", Query.Direction.DESCENDING)
+            db.collection(FireStoreCollection.Comment.value).whereEqualTo(CommentElement.CommentParentId.value, commentParentId)
+                .orderBy("time", Query.Direction.ASCENDING)
                 .startAfter(lastDocument).limit(docLimit).get().await().documents
 
 
@@ -368,14 +313,12 @@ object PostDb {
     suspend fun getUsersCommentPost(
         postId: String,
         userId: String,
-        postOwnerId: String
     ): ArrayList<DocumentSnapshot> {
         val db = FirebaseFirestore.getInstance()
         val mDocuments =
-            db.collection(USER_COLLECTION).document(userId).collection(USER_RELATION_COLLECTION)
-                .document(postOwnerId).collection(
-                    COMMENTS_COLLECTION
-                ).whereEqualTo("postId",postId).orderBy("time", Query.Direction.DESCENDING)
+            db.collection(FireStoreCollection.Comment.value).whereEqualTo(CommentElement.CommentPostId.value, postId)
+                .whereEqualTo(CommentElement.CommentOwnerId.value, userId)
+                .orderBy(CommentElement.CreatedAt.value, Query.Direction.ASCENDING)
                 .get().await().documents
 
         val mData = ArrayList<DocumentSnapshot>()
@@ -386,41 +329,19 @@ object PostDb {
         return mData
     }
 
-
-    suspend fun getPublicPosts(
-        randomUser: String,
-        docLimit: Long,
-        docSnapshot: DocumentSnapshot?
-    ): ArrayList<DocumentSnapshot> {
-        val db = FirebaseFirestore.getInstance()
-        val docs = if (docSnapshot != null)
-            db.collection(USER_COLLECTION).document(randomUser).collection(USER_POST_COLLECTION)
-                .whereEqualTo("public", true).orderBy("time", Query.Direction.DESCENDING)
-                .limit(docLimit).startAfter(docSnapshot).get().await().documents
-        else
-            db.collection(USER_COLLECTION).document(randomUser).collection(USER_POST_COLLECTION)
-                .whereEqualTo("public", true).orderBy("time", Query.Direction.DESCENDING)
-                .limit(docLimit)
-                .get().await().documents
-
-        val retVal: ArrayList<DocumentSnapshot> = ArrayList()
-        retVal.addAll(docs)
-        return retVal
-    }
-
     suspend fun getUserPosts(
         randomUser: String,
         docLimit: Long,
         docSnapshot: DocumentSnapshot?
     ): ArrayList<DocumentSnapshot> {
         val db = FirebaseFirestore.getInstance()
-        val docs = if (docSnapshot != null)
-            db.collection(USER_COLLECTION).document(randomUser).collection(USER_POST_COLLECTION)
-                .orderBy("time", Query.Direction.DESCENDING).limit(docLimit)
-                .startAfter(docSnapshot).get().await().documents
+        val docs = if (docSnapshot == null)
+            db.collection(FireStoreCollection.Post.value).whereEqualTo(PostElement.PostOwnerId.value, randomUser)
+                .orderBy(PostElement.CreatedAt.value, Query.Direction.DESCENDING).limit(docLimit)
+                .get().await().documents
         else
-            db.collection(USER_COLLECTION).document(randomUser).collection(USER_POST_COLLECTION)
-                .orderBy("time", Query.Direction.DESCENDING).limit(docLimit)
+            db.collection(FireStoreCollection.Post.value).whereEqualTo(PostElement.PostOwnerId.value, randomUser)
+                .orderBy(PostElement.CreatedAt.value, Query.Direction.DESCENDING).limit(docLimit)
                 .startAfter(docSnapshot).get().await().documents
 
         val retVal: ArrayList<DocumentSnapshot> = ArrayList()
@@ -428,81 +349,51 @@ object PostDb {
         return retVal
     }
 
-
-    fun deleteComment() {
-
-    }
-
     fun bookMarkPost(
-        userId:String,
-        postId:String,
-        postOwnerId:String,
-        undoBookMark:Boolean
-    ){
+        bookMark: Bookmarks,
+        undoBookMark: Boolean
+    ) {
         val db = FirebaseFirestore.getInstance()
         val batch = db.batch()
-        if(!undoBookMark){
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId),
-                hashMapOf(bookMarkCountElement to FieldValue.increment(1)),
-                SetOptions.merge()
+        if (!undoBookMark) {
+            batch.update(
+                db.collection(FireStoreCollection.Post.value).document(bookMark.postId),
+                PostElement.BookMarkCount.value, FieldValue.increment(1)
             )
             batch.set(
-                db.collection(USER_COLLECTION).document(postOwnerId).collection(USER_POST_COLLECTION).document(postId),
-                hashMapOf(bookMarkCountElement to FieldValue.increment(1)),
-                SetOptions.merge()
+                db.collection(FireStoreCollection.BookMark.value).document(bookMark.bookmarkId),
+                bookMark
             )
-            batch.set(
-                db.collection(USER_COLLECTION).document(userId).collection(
-                    USER_RELATION_COLLECTION
-                ).document(postOwnerId).collection(BOOKMARK_COLLECTION).document(postId), hashMapOf(createdAtElement to FieldValue.serverTimestamp() , bookMarkCountElement to 1)
-            )
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId).collection(
-                    BOOKMARK_COLLECTION
-                ).document(userId), hashMapOf(createdAtElement to FieldValue.serverTimestamp() , bookMarkCountElement to 1 , userIdElement to userId)
-            )
-        }
-        else{
-            batch.set(
-                db.collection(POST_COLLECTION).document(postId),
-                hashMapOf(bookMarkCountElement to FieldValue.increment(-1)),
-                SetOptions.merge()
-            )
-            batch.set(
-                db.collection(USER_COLLECTION).document(postOwnerId).collection(USER_POST_COLLECTION).document(postId),
-                hashMapOf(bookMarkCountElement to FieldValue.increment(-1)),
-                SetOptions.merge()
+        } else {
+            batch.update(
+                db.collection(FireStoreCollection.Post.value).document(bookMark.postId),
+                PostElement.BookMarkCount.value, FieldValue.increment(-1)
             )
             batch.delete(
-                db.collection(USER_COLLECTION).document(userId).collection(
-                    USER_RELATION_COLLECTION
-                ).document(postOwnerId).collection(BOOKMARK_COLLECTION).document(postId))
-            batch.delete(
-                db.collection(POST_COLLECTION).document(postId).collection(
-                    BOOKMARK_COLLECTION
-                ).document(userId)
+                db.collection(FireStoreCollection.BookMark.value).document(bookMark.bookmarkId),
             )
         }
 
         batch.commit()
     }
 
-
     suspend fun getAllLikes(
-        postId: String,
+        likeType: LikeType,
+        likeTypeId: String,
         lastDocument: DocumentSnapshot?,
         docLimit: Long
-    ): ArrayList<DocumentSnapshot>{
+    ): ArrayList<DocumentSnapshot> {
         val db = FirebaseFirestore.getInstance()
 
         val mDocuments = if (lastDocument == null)
-            db.collection(POST_COLLECTION).document(postId).collection(LIKES_COLLECTION)
-                .orderBy(createdAtElement, Query.Direction.DESCENDING)
+            db.collection(FireStoreCollection.Like.value).whereEqualTo(LikeElement.LikeType.value, likeType.value)
+                .whereEqualTo(LikeElement.LikeTypeId.value, likeTypeId)
+                .orderBy(LikeElement.CreatedAt.value, Query.Direction.ASCENDING)
                 .limit(docLimit).get().await().documents
         else
-            db.collection(POST_COLLECTION).document(postId).collection(LIKES_COLLECTION)
-                .orderBy(createdAtElement, Query.Direction.DESCENDING)
+            db.collection(FireStoreCollection.Like.value).whereEqualTo(LikeElement.LikeType.value, likeType.value)
+                .whereEqualTo(LikeElement.LikeTypeId.value, likeTypeId)
+                .orderBy(LikeElement.CreatedAt.value, Query.Direction.ASCENDING)
                 .startAfter(lastDocument).limit(docLimit).get().await().documents
 
 

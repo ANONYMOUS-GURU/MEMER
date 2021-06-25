@@ -127,7 +127,7 @@ class AdapterComments(
                 .circleCrop()
                 .into(userAvatar)
 
-            timeComment.text = getTime(comment.time)
+            timeComment.text = getTime(comment.createdAt)
 
             likeComment.setOnClickListener(this)
             userAvatar.setOnClickListener(this)
@@ -248,7 +248,7 @@ class AdapterReplies(
                 .circleCrop()
                 .into(userAvatar)
 
-            timeComment.text = getTime(comment.time)
+            timeComment.text = getTime(comment.createdAt)
 
             likeComment.setOnClickListener(this)
             userAvatar.setOnClickListener(this)

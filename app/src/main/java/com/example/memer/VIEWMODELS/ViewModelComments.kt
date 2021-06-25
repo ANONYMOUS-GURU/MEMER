@@ -25,11 +25,14 @@ class ViewModelComments(private val post: PostContents2) : ViewModel() {
     private val lastDocumentReplies:ArrayList<DocumentSnapshot?> = ArrayList()
     private val lastSnapshot: DocumentSnapshot? = null
     private val docLimitComments = 15L
+    private val docLimitReplies = 8L
 
     private var commentState:CommentState = CommentState.Default
     private val commentStateMLD = MutableLiveData<CommentState>()
     val commentStateLD:LiveData<CommentState>
         get() = commentStateMLD
+
+
 
     init {
         getComments()
@@ -63,20 +66,15 @@ class ViewModelComments(private val post: PostContents2) : ViewModel() {
         if (user == null)
             return
 
-        val commentId = user.userId + System.currentTimeMillis() + "Comment"
+        val commentId = user.userId + System.currentTimeMillis() + post.postId
         val comment = Comment(
-            commentId,
-            commentContent,
-            commentParentId,
-            user.userId,
-            user.username,
-            user.userAvatarReference,
-            post.postOwnerId,
-            post.postId,
-            0
+            commentId = commentId, commentContent = commentContent,
+            commentParentId = commentParentId, commentOwnerId = user.userId,
+            commentOwnerUsername = user.username, commentOwnerUserAvatar = user.userAvatarReference,
+            commentPostOwnerId = post.postOwnerId, commentPostId = post.postId
         )
 
-        PostDb.addCommentPost(comment,post.postId, user.userId, post.postOwnerId,commentParentId)
+        PostDb.addCommentPost(comment)
 
         if(parentPosition == -1) {
             data.add(0, comment to ArrayList())
@@ -89,7 +87,7 @@ class ViewModelComments(private val post: PostContents2) : ViewModel() {
         dataMLD.value = data
     }
 
-    private val docLimitReplies = 8L
+
 
     fun getCommentsReplies(
         postId: String,
@@ -97,7 +95,7 @@ class ViewModelComments(private val post: PostContents2) : ViewModel() {
         position: Int
     ) {
         viewModelScope.launch {
-            val docs = PostDb.getRepliesCommentsPost(postId,commentParentId,lastDocumentReplies[position],docLimitReplies)
+            val docs = PostDb.getRepliesCommentsPost(commentParentId,lastDocumentReplies[position],docLimitReplies)
             lastDocumentReplies[position] = docs[docs.size-1]
             docs.forEach {
                 val comment = it.toComment()
@@ -121,7 +119,7 @@ class ViewModelComments(private val post: PostContents2) : ViewModel() {
         parentPosition: Int,
         position: Int
     ){
-        PostDb.editComment(postId, userId, postOwnerId, commentContent, commentParentId, commentId)
+        PostDb.editComment(commentContent, commentId)
         if(commentParentId == null){
             data[position].first.commentContent = commentContent
         }else{

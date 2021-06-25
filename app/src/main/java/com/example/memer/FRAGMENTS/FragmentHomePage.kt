@@ -53,9 +53,6 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
     private lateinit var mAuth: FirebaseAuth
     private lateinit var navController: NavController
 
-
-
-
     private val viewModelUser: ViewModelUserInfo by activityViewModels()
     private val viewModelHomePage: ViewModelHomePagePost by viewModels {
         ViewModelHomeFactory(viewModelUser.userLD.value!!.userId)
@@ -72,6 +69,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
+        Log.d(TAG, "onCreateView: ")
         binding = FragmentHomePageBinding.inflate(inflater, container, false)
         loadingDialog = LoadingDialog(requireActivity())
 
@@ -94,6 +92,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        Log.d(TAG, "onViewCreated: ")
         mAuth = Firebase.auth
         navController = Navigation.findNavController(view)
         binding.homePageToolbar.setupWithNavController(navController)
@@ -125,6 +124,7 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
             }
             viewModelUser.userExists() -> {
                 viewModelUser.initUser()
+                Log.d(TAG, "initializeUserViewModel: Loading New User")   //TODO(MOVE THIS TO THE ADD NEW USER PROFILE FRAGMENT AND UPDATE VM USER THERE
                 initDataAndViewModel()
             }
             else -> {
@@ -177,14 +177,14 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
         Log.d("FragmentHomePage", "onLikeClick $position")
 
         viewModelHomePage.likeClicked(
-            position,
-            homePageAdapter.getPost(position).postContents.postId,
-            viewModelUser.userLD.value!!.userId,
-            viewModelUser.userLD.value!!.username,
-            viewModelUser.userLD.value!!.userAvatarReference,
-            viewModelUser.userLD.value!!.nameOfUser,
-            homePageAdapter.getPost(position).postContents.postOwnerId,
-            homePageAdapter.getPost(position).isLiked == 0L
+            position = position,
+            postId = homePageAdapter.getPost(position).postContents.postId,
+            userId = viewModelUser.userLD.value!!.userId,
+            username = viewModelUser.userLD.value!!.username,
+            userAvatarReference = viewModelUser.userLD.value!!.userAvatarReference,
+            nameOfUser = viewModelUser.userLD.value!!.nameOfUser,
+            postOwnerId = homePageAdapter.getPost(position).postContents.postOwnerId,
+            incrementLike = !homePageAdapter.getPost(position).isLiked
         )
 
     }
@@ -196,9 +196,11 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
     override fun onBookMarkClick(position: Int) {
         Log.d(TAG, "onBookMarkClick $position")
         viewModelHomePage.bookMarkClicked(
-            position, viewModelUser.userLD.value!!.userId,
-            homePageAdapter.getPost(position).postContents.postId,
-            homePageAdapter.getPost(position).postContents.postOwnerId
+            position = position, userId = viewModelUser.userLD.value!!.userId,
+            postId = homePageAdapter.getPost(position).postContents.postId,
+            postOwnerId = homePageAdapter.getPost(position).postContents.postOwnerId,
+            postOwnerUsername = homePageAdapter.getPost(position).postContents.username,
+            postOwnerAvatarReference = homePageAdapter.getPost(position).postContents.userAvatarReference
         )
     }
     override fun onUserClick(position: Int) {
@@ -230,26 +232,20 @@ class FragmentHomePage : Fragment(), HomePageAdapter.ItemClickListener,HomePageA
     override fun sharePostClick(position: Int) {
         Log.d(TAG, "sharePostClick: Share")
     }
-
     override fun editPostClick(position: Int) {
         Log.d(TAG, "editPostClick: Edit")
     }
-
     override fun deletePostClick(position: Int) {
         Log.d(TAG, "deletePostClick: Delete")
     }
-
     override fun copyLinkPostClick(position: Int) {
         Log.d(TAG, "copyLinkPostClick: Copy Link")
     }
-
     override fun reportPostClick(position: Int) {
         Log.d(TAG, "reportPostClick: Report")
     }
-
     override fun savePostClick(position: Int) {
         Log.d(TAG, "savePostClick: Save")
     }
-
 
 }

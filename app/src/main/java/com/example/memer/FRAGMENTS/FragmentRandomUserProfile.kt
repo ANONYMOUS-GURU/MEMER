@@ -2,6 +2,7 @@ package com.example.memer.FRAGMENTS
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -59,8 +60,6 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
         randomUserProfile = it
         binding.bioRandomProfilePage.text = randomUserProfile.bio
         binding.nameOfUserRandomProfilePage.text  = randomUserProfile.nameOfUser
-        binding.randomProfileFollowersCount.text = randomUserProfile.followersCount.toString()
-        binding.randomProfileFollowingCount.text = randomUserProfile.followingCount.toString()
         binding.randomProfilePostCount.text  = randomUserProfile.postCount.toString()
         binding.usernameRandomProfilePage.text = randomUserProfile.username
 
@@ -102,14 +101,7 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
         binding.messageRandomUserButton.setOnClickListener(this)
 
     }
-    @SuppressLint("SetTextI18n")
-    private fun changeFollowButton(status:Boolean){
-        if(status){
-            binding.followRandomUserButton.text = "UnFollow"
-        }else{
-            binding.followRandomUserButton.text = "Follow"
-        }
-    }
+
     private fun showPosts(post : ArrayList<PostContents2>){
         if(post.size == 0){
             binding.randomUserAccountPrivateLayout.visibility = View.VISIBLE
@@ -123,24 +115,21 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)
-        viewModelRandomUser.dataLD.observe(viewLifecycleOwner,{
+        viewModelRandomUser.dataLD.observe(viewLifecycleOwner, {
+            Log.d(TAG, "onViewCreated: ${it.postCount}")
             initView(it)
         })
         viewModelRandomUser.postLD.observe(viewLifecycleOwner,{
             showPosts(it)
         })
-        viewModelRandomUser.isFollowingLD.observe(viewLifecycleOwner,{
-            changeFollowButton(it)
-        })
-
     }
     override fun onClick(v: View?) {
         when (v?.id){
             binding.messageRandomUserButton.id -> {}
-            binding.followRandomUserButton.id  -> {
-                viewModelRandomUser.followUser()
-            }
         }
     }
 
+    companion object{
+        private const val TAG = "FRandomUserProfile"
+    }
 }

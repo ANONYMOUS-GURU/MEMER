@@ -122,7 +122,7 @@ class HomePageAdapter(
                 bookmark.setImageDrawable(getDrawable(mContext, R.drawable.bookmark_border_black))
 
 
-            if(postHomePage.isLiked > 0)
+            if(postHomePage.isLiked)
                 likeOption.setImageDrawable(getDrawable(mContext, R.drawable.like_icon_filled))
             else
                 likeOption.setImageDrawable(getDrawable(mContext, R.drawable.like_icon_border))

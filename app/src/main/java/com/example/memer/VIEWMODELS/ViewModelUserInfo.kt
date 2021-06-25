@@ -7,10 +7,8 @@ import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.FIRESTORE.UserDb
 import com.example.memer.HELPERS.InternalStorage
-import com.example.memer.MODELS.PostContents2
+import com.example.memer.MODELS.*
 import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
-import com.example.memer.MODELS.PostHomePage
-import com.example.memer.MODELS.UserData
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -119,11 +117,6 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
         userMLD.value = null
     }
 
-    companion object {
-        private const val TAG = "VMUserInfo"
-        private const val ACCESS_GOOGLE = "GOOGLE"
-        private const val ACCESS_PHONE = "PHONE"
-    }
 
     fun getUserPosts(userId: String) {
         viewModelScope.launch {
@@ -161,15 +154,14 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
         viewModelScope.launch {
             posts.forEach {
                 val userLike = PostDb.getUserLikes(
+                    LikeType.PostLike,
                     it.postId,
                     userId,
-                    it.postOwnerId
                 )
                 // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
                 val userBookMark = PostDb.getUserBookMarks(
                     it.postId,
                     userId,
-                    it.postOwnerId
                 )
                 postComplete.add(
                     PostHomePage(
@@ -195,15 +187,14 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
             docs.forEach {
                 posts.add(it.toPostContents2())
                 val userLike = PostDb.getUserLikes(
+                    LikeType.PostLike,
                     it.getString("postId")!!,
                     userId,
-                    it.getString("postOwnerId")!!
                 )
                 // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
                 val userBookMark = PostDb.getUserBookMarks(
                     it.getString("postId")!!,
                     userId,
-                    it.getString("postOwnerId")!!
                 )
                 postComplete.add(
                     PostHomePage(
@@ -232,34 +223,57 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
         postOwnerId: String,
         incrementLike: Boolean
     ) {
-//        val likes = LikedBy(username,userAvatarReference,userId,1,postId,postOwnerId,null)
-        PostDb.updateLikesPost(
-            postId,
-            postOwnerId,
-            userId,
-            username,
-            userAvatarReference,
-            nameOfUser,
-            incrementLike
+
+        val mLike = Likes(
+            likeId = userId + postId,
+            userId = userId,
+            username = username,
+            nameOfUser = nameOfUser,
+            userAvatarReference = userAvatarReference,
+            likeType = LikeType.PostLike.value,
+            likeTypeId = postId
         )
 
-        postComplete[position].isLiked =
-            postComplete[position].isLiked + if (incrementLike) 1 else -1
+        PostDb.updateLikes(mLike = mLike, incrementLike = incrementLike)
+
+        postComplete[position].isLiked = !postComplete[position].isLiked
         postCompleteMLD.value = postComplete
     }
 
 
-    fun bookMarkClicked(position: Int, userId: String, postId: String, postOwnerId: String) {
+    fun bookMarkClicked(
+        position: Int,
+        userId: String,
+        postId: String,
+        postOwnerId: String,
+        postOwnerUsername: String,
+        postOwnerAvatarReference: String?
+    ) {
+
+        val bookMark = Bookmarks(
+            bookmarkId = userId + postId,
+            postId = postId,
+            userId = userId,
+            postOwnerId = postOwnerId,
+            postOwnerUsername = postOwnerUsername,
+            postOwnerAvatarReference = postOwnerAvatarReference
+        )
 
         if (postComplete[position].isBookmarked) {
             postComplete[position].isBookmarked = false
-            PostDb.bookMarkPost(userId, postId, postOwnerId, true)
+            PostDb.bookMarkPost(bookMark = bookMark, undoBookMark = true)
         } else {
             postComplete[position].isBookmarked = true
-            PostDb.bookMarkPost(userId, postId, postOwnerId, false)
+            PostDb.bookMarkPost(bookMark = bookMark, undoBookMark = false)
         }
 
         postCompleteMLD.value = postComplete
+    }
+
+    companion object {
+        private const val TAG = "VMUserInfo"
+        private const val ACCESS_GOOGLE = "GOOGLE"
+        private const val ACCESS_PHONE = "PHONE"
     }
 
 }

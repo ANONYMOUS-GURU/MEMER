@@ -1,12 +1,11 @@
 package com.example.memer.VIEWMODELS
 
+import android.util.Log
 import androidx.lifecycle.*
 import com.example.memer.FIRESTORE.PostDb
 import com.example.memer.FIRESTORE.UserDb
-import com.example.memer.MODELS.PostContents2
+import com.example.memer.MODELS.*
 import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
-import com.example.memer.MODELS.PostHomePage
-import com.example.memer.MODELS.UserProfileInfo
 import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,10 +29,6 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
     val postCompleteLD: LiveData<ArrayList<PostHomePage>>
         get() = postCompleteMLD
 
-    private var isFollowing: Boolean = false
-    private val isFollowingMLD: MutableLiveData<Boolean> = MutableLiveData()
-    val isFollowingLD: LiveData<Boolean>
-        get() = isFollowingMLD
 
     private var lastPostDocumentSnapshot: DocumentSnapshot? = null
     private var docLimit: Long = 20
@@ -42,10 +37,9 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
     init {
         viewModelScope.launch {
             data = UserDb.getRandomUser(randomUserId)
-            isFollowing = UserDb.isFollowing(userId, randomUserId)
+            Log.d(TAG, "init: ${data.postCount} ")
             withContext(Dispatchers.Main) {
                 dataMLD.value = data
-                isFollowingMLD.value = isFollowing
             }
             getInitPosts()
         }
@@ -53,11 +47,10 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
 
     private fun getInitPosts() {
         viewModelScope.launch {
-            val docs: ArrayList<DocumentSnapshot> = if (isFollowing) {
-                PostDb.getUserPosts(randomUserId, docLimit, lastPostDocumentSnapshot)
-            } else {
-                PostDb.getPublicPosts(randomUserId, docLimit, lastPostDocumentSnapshot)
-            }
+            val docs: ArrayList<DocumentSnapshot> = PostDb.getUserPosts(
+                randomUserId, docLimit, lastPostDocumentSnapshot
+            )
+
             moreDataPresent = docs.size >= docLimit
             lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
             docs.forEach {
@@ -70,11 +63,10 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
     }
     fun getMorePosts(){
         viewModelScope.launch {
-            val docs: ArrayList<DocumentSnapshot> = if (isFollowing) {
-                PostDb.getUserPosts(randomUserId, docLimit, lastPostDocumentSnapshot)
-            } else {
-                PostDb.getPublicPosts(randomUserId, docLimit, lastPostDocumentSnapshot)
-            }
+            val docs: ArrayList<DocumentSnapshot> = PostDb.getUserPosts(
+                randomUserId, docLimit, lastPostDocumentSnapshot
+            )
+
             moreDataPresent = docs.size >= docLimit
             lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
             docs.forEach {
@@ -91,15 +83,14 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
         viewModelScope.launch {
             post.forEach {
                 val userLike = PostDb.getUserLikes(
+                    LikeType.PostLike,
                     it.postId,
-                    userId,
-                    it.postOwnerId
+                    userId
                 )
                 // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
                 val userBookMark = PostDb.getUserBookMarks(
                     it.postId,
                     userId,
-                    it.postOwnerId
                 )
                 postComplete.add(
                     PostHomePage(
@@ -124,15 +115,14 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
             docs.forEach {
                 post.add(it.toPostContents2())
                 val userLike = PostDb.getUserLikes(
+                    LikeType.PostLike,
                     it.getString("postId")!!,
                     userId,
-                    it.getString("postOwnerId")!!
                 )
                 // TODO(This Has To be local as bookmarks saved locally {postId saved locally and then restored if true}
                 val userBookMark = PostDb.getUserBookMarks(
                     it.getString("postId")!!,
                     userId,
-                    it.getString("postOwnerId")!!
                 )
                 postComplete.add(
                     PostHomePage(
@@ -160,48 +150,41 @@ class ViewModelRandomUserProfile(private val userId: String, private val randomU
         postOwnerId: String,
         incrementLike: Boolean
     ) {
-//        val likes = LikedBy(username,userAvatarReference,userId,1,postId,postOwnerId,null)
-        PostDb.updateLikesPost(
-            postId,
-            postOwnerId,
-            userId,
-            username,
-            userAvatarReference,
-            nameOfUser,
-            incrementLike
+        val mLike = Likes(
+            likeId = userId + postId,
+            userId = userId,
+            username = username,
+            nameOfUser = nameOfUser,
+            userAvatarReference = userAvatarReference,
+            likeType = LikeType.PostLike.value,
+            likeTypeId = postId
         )
+        PostDb.updateLikes(mLike = mLike, incrementLike = incrementLike)
 
-        postComplete[position].isLiked = postComplete[position].isLiked + if (incrementLike) 1 else -1
+        postComplete[position].isLiked = !postComplete[position].isLiked
         postCompleteMLD.value = postComplete
     }
 
-    fun bookMarkClicked(position: Int, userId: String, postId: String, postOwnerId: String) {
+    fun bookMarkClicked(position: Int, userId: String, postId: String, postOwnerId: String,postOwnerUsername:String,postOwnerAvatarReference:String?) {
+
+        val bookMark = Bookmarks(
+            bookmarkId = userId + postId,
+            postId = postId,
+            userId = userId,
+            postOwnerId = postOwnerId,
+            postOwnerUsername = postOwnerUsername,
+            postOwnerAvatarReference = postOwnerAvatarReference
+        )
 
         if (postComplete[position].isBookmarked) {
             postComplete[position].isBookmarked = false
-            PostDb.bookMarkPost(userId,postId,postOwnerId,true)
+            PostDb.bookMarkPost(bookMark = bookMark,undoBookMark = true)
         } else {
             postComplete[position].isBookmarked = true
-            PostDb.bookMarkPost(userId,postId,postOwnerId,false)
+            PostDb.bookMarkPost(bookMark = bookMark,undoBookMark = false)
         }
 
         postCompleteMLD.value = postComplete
-    }
-
-    fun followUser() {
-        if (isFollowing) {
-            UserDb.unFollow(userId, randomUserId)
-            isFollowing = false
-            isFollowingMLD.value = isFollowing
-            post = ArrayList()
-            lastPostDocumentSnapshot = null
-//            getMorePosts()
-        } else {
-            UserDb.follow(userId, randomUserId)
-
-        }
-
-
     }
 
     companion object {

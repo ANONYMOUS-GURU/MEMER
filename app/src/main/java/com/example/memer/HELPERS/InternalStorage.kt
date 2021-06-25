@@ -32,7 +32,7 @@ object InternalStorage {
         val folder = context.getDir(userFolderName, Context.MODE_PRIVATE)
         for(filename in arrayOf("userId","username","userAvatarReference","userProfilePicReference",
             "nameOfUser","bio","signInType","phoneNumber","userFollowersCount","userFollowingCount",
-            "userPostCount")){
+            "userPostCount","userGlobalLikes")){
             val textFile = File(folder, filename)
             if(textFile.exists())
                 textFile.delete()
@@ -51,16 +51,16 @@ object InternalStorage {
             bio = readUserString("bio",context),
             signInType = readUserString("signInType",context),
             phoneNumber = readUserString("phoneNumber",context),
-            userFollowersCount = readUserLong("userFollowersCount",context),
-            userFollowingCount = readUserLong("userFollowingCount",context),
-            userPostCount = readUserLong("userPostCount",context))
+            userPostCount = readUserLong("userPostCount",context),
+            userGlobalLikes = readUserLong("userGlobalLikes",context)
+        )
     }
     fun writeUser(mUser: UserData,context: Context){
 
         val folder = context.getDir(userFolderName, Context.MODE_PRIVATE)
         for(filename in arrayOf("userId","username","userAvatarReference","userProfilePicReference",
             "nameOfUser","bio","signInType","phoneNumber","userFollowersCount","userFollowingCount",
-            "userPostCount")){
+            "userPostCount","userGlobalLikes")){
             val textFile = File(folder, filename)
             if(textFile.exists())
                 textFile.delete()
@@ -74,9 +74,8 @@ object InternalStorage {
         writeUserString("bio",mUser.bio,context)
         writeUserString("signInType",mUser.signInType,context)
         writeUserString("phoneNumber",mUser.phoneNumber ?: "",context)
-        writeUserString("userFollowersCount",mUser.userFollowersCount.toString(),context)
-        writeUserString("userFollowingCount",mUser.userFollowersCount.toString(),context)
         writeUserString("userPostCount",mUser.userPostCount.toString(),context)
+        writeUserString("userGlobalLikes",mUser.userGlobalLikes.toString(),context)
     }
     fun userExists(context: Context):Boolean{
         val folder = context.getDir(userFolderName, Context.MODE_PRIVATE)

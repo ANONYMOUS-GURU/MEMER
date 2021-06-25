@@ -9,35 +9,46 @@ import java.util.*
 
 @Parcelize
 data class PostContents2(
-    val postResource: String,                                     // imageResourceReference,videoResourceReference from cloud storage
     val postId: String,                               // uniqueId for each post
+
     val postOwnerId:String,                           // unique id of the user who posted
+
+    val postResource: String,                                     // imageResourceReference,videoResourceReference from cloud storage
     val postDescription:String,                       // post description given by post owner
     val postTypeImage:Boolean,
-    val likeCount: Long,
-    val commentCount: Long,
+
     val username:String,
     var userAvatarReference:String? = null,
-    val public:Boolean,
-    val bookMarkCount:Long,
+
+    val likeCount: Long,
+    val commentCount: Long,
+    val bookMarkCount:Long? = null,
+    val reportCount:Long? = null,
+
     @ServerTimestamp
-    val time :Date? = null,
+    val createdAt :Date? = null,
+    @ServerTimestamp
+    val updatedAt:Date? = null
 
 ):Parcelable{
     companion object{
         fun DocumentSnapshot.toPostContents2() : PostContents2{
             return PostContents2(
-                getString("postResource") !!,
-                getString("postId") !!,
-                getString("postOwnerId") !!,
-                getString("postDescription") !!,
-                getBoolean("postTypeImage") !!,
-                getLong("likeCount") !!,
-                getLong("commentCount") !!,
-                getString("username") !!,
-                getString("userAvatarReference"),
-                getBoolean("public") !!,
-                getLong("bookMarkCount")!!
+                postId = getString("postId") !!,
+                postOwnerId = getString("postOwnerId") !!,
+
+                postResource = getString("postResource") !!,
+                postDescription = getString("postDescription") !!,
+                postTypeImage = getBoolean("postTypeImage") !!,
+
+                username = getString("username") !!,
+                userAvatarReference = getString("userAvatarReference"),
+
+                likeCount = getLong("likeCount") !!,
+                commentCount = getLong("commentCount") !!,
+                bookMarkCount = getLong("bookMarkCount"),
+
+                reportCount = getLong("reportCount")
             )
         }
     }
@@ -45,8 +56,7 @@ data class PostContents2(
 
 data class PostHomePage(
     val postContents: PostContents2,
-    var isLiked : Long = 0,
+    var isLiked : Boolean = false,
     var isBookmarked: Boolean =  false,
     var isCommented : Boolean = false,
-    var isUpdated:Boolean = false
 )

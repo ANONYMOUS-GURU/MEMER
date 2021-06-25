@@ -26,9 +26,10 @@ class FragmentEditProfile : Fragment(), View.OnClickListener {
     private lateinit var navController: NavController
     private val viewModel: ViewModelUserInfo by activityViewModels()
 
-    companion object{
+    companion object {
         const val TAG = "FragmentEditProfile"
     }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -67,16 +68,11 @@ class FragmentEditProfile : Fragment(), View.OnClickListener {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)
 
-        if(viewModel.userLD.value !! .isNewUser) {
-            Log.d(TAG, "onViewCreated: is New User")
-            val appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentEditProfile))
-            binding.editProfilePageToolbar.setupWithNavController(navController,appBarConfiguration)
-        }
-        else
-            binding.editProfilePageToolbar.setupWithNavController(navController)
+
+        binding.editProfilePageToolbar.setupWithNavController(navController)
 
         viewModel.userLD.observe(viewLifecycleOwner, {
-            if(it!=null)
+            if (it != null)
                 getUserData(it)
         })
 
@@ -97,25 +93,32 @@ class FragmentEditProfile : Fragment(), View.OnClickListener {
 //            binding.editProfilePageToolbar.setNavigationIcon(R.drawable.close_icon)
     }
 
-    private fun setImageResource(value: Pair<String?,String?>) {
-        viewModel.updateUserImageReference(value , viewModel.userLD.value !! .userId)
+    private fun setImageResource(value: Pair<String?, String?>) {
+        viewModel.updateUserImageReference(value, viewModel.userLD.value!!.userId)
     }
+
     private fun saveChanges() {
         val bio = binding.bioEditProfileText.text.toString()
         val username = binding.usernameEditProfileText.text.toString()
         val name = binding.nameEditProfileText.text.toString()
         val user = UserData(
-            viewModel.userLD.value !! .userId,username,name,viewModel.userLD.value !!.signInType,
-            viewModel.userLD.value!!.phoneNumber,bio,viewModel.userLD.value!!.userProfilePicReference,
-            viewModel.userLD.value!!.userPostCount,viewModel.userLD.value!!.userFollowersCount,
-            viewModel.userLD.value!!.userFollowingCount,viewModel.userLD.value!!.userAvatarReference,
-            viewModel.userLD.value!!.isAuthenticated,viewModel.userLD.value!!.isNewUser
+            userId = viewModel.userLD.value!!.userId,
+            username = username,
+            nameOfUser = name,
+            signInType = viewModel.userLD.value!!.signInType,
+            phoneNumber = viewModel.userLD.value!!.phoneNumber,
+            bio = bio,
+            userProfilePicReference = viewModel.userLD.value!!.userProfilePicReference,
+            userPostCount = viewModel.userLD.value!!.userPostCount,
+            userAvatarReference = viewModel.userLD.value!!.userAvatarReference,
+            userGlobalLikes = viewModel.userLD.value!!.userGlobalLikes
         )
 
 
         viewModel.updateUser(user)
         // TODO(save changes in cloud)
     }
+
     override fun onClick(v: View?) {
         if (v != null) {
             when (v.id) {

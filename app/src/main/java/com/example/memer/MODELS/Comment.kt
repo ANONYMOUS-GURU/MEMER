@@ -1,6 +1,7 @@
 package com.example.memer.MODELS
 
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.*
 
@@ -15,23 +16,30 @@ data class Comment(
 
     val commentPostOwnerId:String,
     val commentPostId:String,
+
     var commentReplyCount:Long = 0,
+    var commentLikeCount:Long = 0,
+
     @ServerTimestamp
-    val time : Date? = null
-//    val commentLikeCount:Long
+    val createdAt : Date? = null,
+    @ServerTimestamp
+    val updatedAt:Date? = null,
+
+    @Exclude @set:Exclude @get:Exclude var isLiked: Boolean = false
 ){
     companion object{
         fun DocumentSnapshot.toComment():Comment?{
             return Comment(
-                getString("commentId") !!,
-                getString("commentContent") !!,
-                getString("commentParentId"),
-                getString("commentOwnerId") !! ,
-                getString("commentOwnerUsername") !! ,
-                getString("commentOwnerUserAvatar") ,
-                getString("commentPostOwnerId") !!,
-                getString("commentPostId") !!,
-                getLong("commentReplyCount") !!
+                commentId = getString("commentId") !!,
+                commentContent = getString("commentContent") !!,
+                commentParentId = getString("commentParentId"),
+                commentOwnerId = getString("commentOwnerId") !! ,
+                commentOwnerUsername = getString("commentOwnerUsername") !! ,
+                commentOwnerUserAvatar = getString("commentOwnerUserAvatar") ,
+                commentPostOwnerId = getString("commentPostOwnerId") !!,
+                commentPostId = getString("commentPostId") !!,
+                commentReplyCount = getLong("commentReplyCount") !!,
+                commentLikeCount = getLong("commentLikeCount")!!
             )
         }
     }

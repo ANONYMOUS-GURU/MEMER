@@ -69,7 +69,7 @@ class FragmentEditProfileNewUser : Fragment(), View.OnClickListener {
                     val bio = binding.bioEditProfileNewUserText.text.toString()
 
                     if(valid(username,nameOfUser,bio)){
-                        viewModel.writeNewUser(UserTextEditInfo(username,nameOfUser,bio))
+                        viewModel.writeNewUser(UserTextEditInfo(username,nameOfUser,bio,viewModel.imageRefLD.value))
                     }
 
                     true
@@ -112,7 +112,8 @@ class FragmentEditProfileNewUser : Fragment(), View.OnClickListener {
         viewModel.userTextEditInfo = UserTextEditInfo(
             binding.usernameEditProfileNewUserText.text.toString(),
             binding. nameEditProfileNewUserText.text.toString(),
-            binding.bioEditProfileNewUserText.text.toString()
+            binding.bioEditProfileNewUserText.text.toString(),
+            viewModel.imageRefLD.value
         )
     }
     override fun onClick(v: View?) {
