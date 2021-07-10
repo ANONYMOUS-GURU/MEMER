@@ -1,12 +1,14 @@
 package com.example.memer.FRAGMENTS
 
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
+import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.ui.AppBarConfiguration
@@ -36,7 +38,7 @@ class FragmentProfile : Fragment(), View.OnClickListener {
     private lateinit var mAuth: FirebaseAuth
     private lateinit var navController: NavController
     private val viewModel: ViewModelUserInfo by activityViewModels()
-    private lateinit var loadingDialog:LoadingDialog
+    private lateinit var loadingDialog: LoadingDialog
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -81,6 +83,7 @@ class FragmentProfile : Fragment(), View.OnClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)
+
         val appBarConfiguration = AppBarConfiguration(setOf(R.id.fragmentProfile))
         binding.profilePageToolbar.setupWithNavController(navController, appBarConfiguration)
         binding.profilePageToolbar.setOnMenuItemClickListener {
@@ -92,12 +95,15 @@ class FragmentProfile : Fragment(), View.OnClickListener {
                 else -> false
             }
         }
-        viewModel.userLD.observe(viewLifecycleOwner, Observer {
-            if(it!=null)
-                getUserData(it)
-        })
-        getUserData(viewModel.userLD.value)
+        if (viewModel.userLD.value != null) {
+            getUserData(viewModel.userLD.value)
+        }
+        else {
+            Log.d(TAG, "onViewCreated: Navigating to log in")
+            navController.navigate(R.id.action_global_fragmentLogIn)
+        }
     }
+
     override fun onClick(v: View?) {
         if (v != null) {
             when (v.id) {
@@ -115,17 +121,17 @@ class FragmentProfile : Fragment(), View.OnClickListener {
             .build()
         val mGoogleSignInClient = GoogleSignIn.getClient(requireActivity(), gso)
         mGoogleSignInClient.signOut().addOnCompleteListener {
-            if(it.isSuccessful){
+            if (it.isSuccessful) {
                 viewModel.signOut()
-                Toast.makeText(context,"Successfully signed out",Toast.LENGTH_SHORT).show()
-                navController.navigate(R.id.action_global_fragmentLogIn)
-            }
-            else{
-                Toast.makeText(context,"Error Logging Out",Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Successfully signed out", Toast.LENGTH_SHORT).show()
+                navController.navigate(R.id.action_global_LogOut)
+            } else {
+                Toast.makeText(context, "Error Logging Out", Toast.LENGTH_SHORT).show()
             }
             loadingDialog.dismissDialog()
         }
     }
+
     private fun getUserData(user: UserData?) {
         if (user != null) {
             binding.apply {
@@ -144,6 +150,10 @@ class FragmentProfile : Fragment(), View.OnClickListener {
                 .circleCrop()
                 .into(binding.profilePageImage)
         }
+    }
+
+    companion object {
+        private const val TAG = "FragmentProfile"
     }
 
 }

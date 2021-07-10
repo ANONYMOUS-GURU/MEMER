@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memer.ADAPTERS.AdapterFragmentYourPosts
 import com.example.memer.MODELS.PostState
-import com.example.memer.MODELS.PostThumbnailState
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentYourPostsBinding
@@ -40,7 +39,7 @@ class FragmentYourPosts : Fragment(), AdapterFragmentYourPosts.ItemClickListener
         binding = FragmentYourPostsBinding.inflate(inflater,container,false)
 
         initRecyclerView()
-        if(viewModelUser.postLD.value!! is PostThumbnailState.InitialLoading){
+        if(viewModelUser.stateLD.value!! == PostState.DataNotLoaded){
             viewModelUser.getUserPosts(viewModelUser.userLD.value !! . userId)
         }
 
@@ -69,30 +68,40 @@ class FragmentYourPosts : Fragment(), AdapterFragmentYourPosts.ItemClickListener
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = requireParentFragment().findNavController()
-        viewModelUser.postLD.observe(viewLifecycleOwner, {
+        viewModelUser.stateLD.observe(viewLifecycleOwner, {
             when (it) {
-                is PostThumbnailState.Loaded -> {
-                    Log.d(TAG, "initDataAndViewModel: Loaded ${it.post.size}")
-                    mAdapter.submitState(it)
-                    mAdapter.submitList(it.post)
-                    mAdapter.notifyDataSetChanged()
+                PostState.Loaded -> {
+                    Log.d(TAG, "onViewCreated: Loaded Data")
+                    hideProgressBar()
                 }
-                is PostThumbnailState.Refreshing -> {
-                    mAdapter.submitState(it)
+                PostState.Refreshing -> {
                     Log.d(TAG, "initDataAndViewModel: Refreshing")
                 }
-                is PostThumbnailState.LoadingMoreData -> {
+                PostState.Loading -> {
                     Log.d(TAG, "initDataAndViewModel: Loading More Data")
+                    showProgressBar()
                 }
-                is PostThumbnailState.InitialLoading -> {
-                    Log.d(TAG, "initDataAndViewModel: Initializing")
+                PostState.DataNotLoaded -> {
+                    Log.d(TAG, "initDataAndViewModel: Data Not Loaded")
+                    showProgressBar()
                 }
-                is PostThumbnailState.LoadingFailed -> {
+                PostState.Failed -> {
                     Log.d(TAG, "initDataAndViewModel: Failed")
                 }
             }
         })
+        viewModelUser.postLD.observe(viewLifecycleOwner,{
+            mAdapter.submitList(it)
+            mAdapter.notifyDataSetChanged()
+        })
 
+    }
+
+    private fun showProgressBar(){
+        binding.progressBarYourPost.visibility = View.VISIBLE
+    }
+    private fun hideProgressBar(){
+        binding.progressBarYourPost.visibility = View.GONE
     }
 
     override fun onItemClick(position: Int) {

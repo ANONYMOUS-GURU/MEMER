@@ -1,15 +1,16 @@
 package com.example.memer.FRAGMENTS
 
-import android.annotation.SuppressLint
+import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
+import androidx.core.view.children
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.fragment.navArgs
@@ -28,6 +29,7 @@ import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentRandomUserProfileBinding
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.fragment_random_user_profile.*
 
 class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
 
@@ -35,7 +37,7 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
     private  val viewModelUser : ViewModelUserInfo by activityViewModels()
     private lateinit var navController : NavController
     private lateinit var randomUserId : String
-    private lateinit var randomUserProfile: UserProfileInfo
+    private  var randomUserProfile: UserProfileInfo? = null
     private lateinit var userData : UserData
     private val args: FragmentRandomUserProfileArgs by navArgs()
     //TODO (DECLARE INSIDE OnCREATE)
@@ -53,25 +55,42 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
         randomUserId =args.randomUserId
         userData = viewModelUser.userLD.value !!
 
+        initView(null)
+
         return binding.root
     }
 
-    private fun initView(it:UserProfileInfo){
-        randomUserProfile = it
-        binding.bioRandomProfilePage.text = randomUserProfile.bio
-        binding.nameOfUserRandomProfilePage.text  = randomUserProfile.nameOfUser
-        binding.randomProfilePostCount.text  = randomUserProfile.postCount.toString()
-        binding.usernameRandomProfilePage.text = randomUserProfile.username
+    private fun initView(userProfileInfo: UserProfileInfo?){
+        randomUserProfile = userProfileInfo
+        if(randomUserProfile == null){
+            // MAKE THE LOADING SCREEN
+            startAnimation(binding.followMessageLayout)
+            startAnimation(binding.userProfileInfoLayout)
+        }
+        else{
+            stopAnimation(binding.followMessageLayout)
+            stopAnimation(binding.userProfileInfoLayout)
 
-        val requestOptionsAvatar = RequestOptions()
-            .placeholder(R.drawable.default_avatar)
-            .error(R.drawable.default_avatar)
+            binding.bioRandomProfilePage.text = randomUserProfile?.bio
+            binding.nameOfUserRandomProfilePage.text  = randomUserProfile?.nameOfUser
+            binding.randomProfilePostCount.text  = randomUserProfile?.postCount.toString()
+            binding.usernameRandomProfilePage.text = randomUserProfile?.username
 
-        Glide.with(binding.randomProfilePageImage.context)
-            .applyDefaultRequestOptions(requestOptionsAvatar)
-            .load(randomUserProfile.userAvatarReference)
-            .circleCrop()
-            .into(binding.randomProfilePageImage)
+            val requestOptionsAvatar = RequestOptions()
+                .placeholder(R.drawable.default_avatar)
+                .error(R.drawable.default_avatar)
+
+            Glide.with(binding.randomProfilePageImage.context)
+                .applyDefaultRequestOptions(requestOptionsAvatar)
+                .load(randomUserProfile?.userAvatarReference)
+                .circleCrop()
+                .into(binding.randomProfilePageImage)
+
+            binding.followRandomUserButton.setOnClickListener(this)
+            binding.messageRandomUserButton.setOnClickListener(this)
+        }
+
+
 
         val viewPager: ViewPager2 = binding.viewPagerRandomProfilePage
         viewPager.adapter = AdapterRandomUserProfile(this)
@@ -97,8 +116,7 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
             }
         }.attach()
 
-        binding.followRandomUserButton.setOnClickListener(this)
-        binding.messageRandomUserButton.setOnClickListener(this)
+
 
     }
 
@@ -112,6 +130,23 @@ class FragmentRandomUserProfile : Fragment() , View.OnClickListener{
         }
     }
 
+    private fun startAnimation(view:ViewGroup){
+        view.children.forEach {
+            it.visibility = View.INVISIBLE
+        }
+
+        view.background = AppCompatResources.getDrawable(requireContext(), R.drawable.loading_animation)
+        val animationDrawable = view.background as AnimationDrawable
+        animationDrawable.setEnterFadeDuration(600)
+        animationDrawable.setExitFadeDuration(600)
+        animationDrawable.start()
+    }
+    private fun stopAnimation(view:ViewGroup){
+        view.children.forEach {
+            it.visibility = View.VISIBLE
+        }
+        view.setBackgroundResource(0)
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)

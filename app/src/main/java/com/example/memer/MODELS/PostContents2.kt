@@ -63,18 +63,11 @@ data class PostHomePage(
     var isCommented : Boolean = false,
 ):Parcelable
 
-sealed class PostState{
-    data class Loaded(var post:ArrayList<PostHomePage>):PostState()
-    object InitialLoading:PostState()
-    data class Refreshing(var post:ArrayList<PostHomePage>):PostState()
-    data class LoadingMoreData(var post: ArrayList<PostHomePage>):PostState()
-    data class LoadingFailed(var post: ArrayList<PostHomePage>,val msg:String = "Loading Data Failed"):PostState()
-}
 
-sealed class PostThumbnailState{
-    data class Loaded(var post:ArrayList<PostContents2>):PostThumbnailState()
-    object InitialLoading:PostThumbnailState()
-    data class Refreshing(var post:ArrayList<PostContents2>):PostThumbnailState()
-    data class LoadingMoreData(var post: ArrayList<PostContents2>):PostThumbnailState()
-    data class LoadingFailed(var post: ArrayList<PostContents2>,val msg:String = "Loading Data Failed"):PostThumbnailState()
+enum class PostState{
+    DataNotLoaded,
+    Loading,
+    Loaded,
+    Refreshing,
+    Failed
 }

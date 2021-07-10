@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,31 +8,52 @@
     android:orientation="vertical"
     android:layout_margin="8dp">
 
-        <include
-            layout="@layout/single_comment_only_view"
-            android:id="@+id/commentRootView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/showComments"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="8dp"
-            android:textSize="16sp"
-            android:text="@string/show_replies"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/userAvatarComment" />
-
-        <androidx.recyclerview.widget.RecyclerView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/replyRecyclerView"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="8dp"
-            tools:itemCount="3"
-            tools:listitem="@layout/single_comment_only_view" />
+            android:orientation="vertical">
+                <include
+                    layout="@layout/single_comment_only_view"
+                    android:id="@+id/commentRootView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
 
-</LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/replyRecyclerView"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginTop="8dp"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/single_comment_only_view" />
+
+                <TextView
+                    android:id="@+id/showComments"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:padding="8dp"
+                    android:textSize="16sp"
+                    android:gravity="center"
+                    android:text="@string/show_replies"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/userAvatarComment" />
+
+                <ProgressBar
+                    android:id="@+id/progressBarCommentsReplies"
+                    style="?android:attr/progressBarStyle"
+                    android:padding="16dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="24dp"
+                    android:visibility="visible"
+                    android:background="@android:color/transparent"/>
+
+        </LinearLayout>
+
+
+
+</androidx.core.widget.NestedScrollView>

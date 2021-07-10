@@ -12,8 +12,7 @@
         <action
             android:id="@+id/action_fragmentLogIn_to_fragmentEditProfileNewUser"
             app:destination="@id/fragmentEditProfileNewUser"
-            app:launchSingleTop="false"
-            app:popUpTo="@+id/nav_graph"
+            app:popUpTo="@+id/fragmentLogIn"
             app:popUpToInclusive="true"/>
     </fragment>
     <fragment

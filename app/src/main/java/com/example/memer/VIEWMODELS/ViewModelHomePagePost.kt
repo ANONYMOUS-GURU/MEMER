@@ -12,13 +12,18 @@ import kotlinx.coroutines.withContext
 
 class ViewModelHomePagePost(userId: String) : ViewModel() {
 
-    private var data:ArrayList<PostHomePage> = ArrayList()
 
-    private var post: PostState = PostState.InitialLoading
-    private var postMLD: MutableLiveData<PostState> =
-        MutableLiveData<PostState>()
-    val postLD: LiveData<PostState>
+    private var post: ArrayList<PostHomePage> = ArrayList()
+    private var postMLD: MutableLiveData<ArrayList<PostHomePage>> =
+        MutableLiveData<ArrayList<PostHomePage>>()
+    val postLD: LiveData<ArrayList<PostHomePage>>
         get() = postMLD
+
+    private var state:PostState = PostState.DataNotLoaded
+    private var stateMLD: MutableLiveData<PostState> =
+        MutableLiveData<PostState>()
+    val stateLD: LiveData<PostState>
+        get() = stateMLD
 
     var moreDataPresent: Boolean = false
 
@@ -27,14 +32,21 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
     private var lastDocumentSnapshot: DocumentSnapshot? = null
 
     init {
-        postMLD.value = post
-        getData(userId)
-    }
 
-    private fun getData(userId: String) {
-        data = ArrayList()
+        state = PostState.DataNotLoaded
+        stateMLD.value = state
+
+
+        post = ArrayList()
+        postMLD.value = post
+
+        moreDataPresent = false
+
         viewModelScope.launch {
-            moreDataPresent = false
+            state = PostState.Loading
+            withContext(Dispatchers.Main){
+                stateMLD.value = state
+            }
             val doc = PostDb.getPosts(lastDocumentSnapshot, docLimit)
             Log.d(TAG, "getData: Got Data")
             lastDocumentSnapshot = if (doc.size > 0) doc[doc.size - 1] else null
@@ -49,7 +61,7 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
                     it.getString("postId")!!,
                     userId
                 )
-                data.add(
+                post.add(
                     PostHomePage(
                         postContents = it.toPostContents2(),
                         isLiked = userLike,
@@ -60,20 +72,22 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
             }
             withContext(Dispatchers.Main) {
                 Log.d(TAG, "getData: updating")
-                post = PostState.Loaded(data)
+                state = PostState.Loaded
+                stateMLD.value = state
                 postMLD.value = post
                 moreDataPresent = doc.size >= docLimit
             }
-
         }
     }
 
 
+
     fun getMoreData(userId: String) {
-        post = PostState.LoadingMoreData(data)
-        postMLD.value = post
+        state = PostState.Loading
+        stateMLD.value = state
+
+        moreDataPresent = false
         viewModelScope.launch {
-            moreDataPresent = false
             val doc = PostDb.getPosts(
                 lastDocumentSnapshot,
                 docLimit
@@ -91,7 +105,7 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
                     it.getString("postId")!!,
                     userId,
                 )
-                data.add(
+                post.add(
                     PostHomePage(
                         postContents = it.toPostContents2(),
                         isLiked = userLike,
@@ -101,7 +115,8 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
                 )
             }
             withContext(Dispatchers.Main) {
-                post = PostState.Loaded(data)
+                state = PostState.Loaded
+                stateMLD.value = state
                 postMLD.value = post
                 moreDataPresent = doc.size >= docLimit
             }
@@ -133,9 +148,8 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
             incrementLike
         )
 
-        data[position].isLiked = !data[position].isLiked
-        post = PostState.Loaded(data)
-        postMLD.value = post
+        post[position].isLiked = !post[position].isLiked
+        setData()
     }
 
 
@@ -156,23 +170,27 @@ class ViewModelHomePagePost(userId: String) : ViewModel() {
             postOwnerUsername = postOwnerUsername,
             postOwnerAvatarReference = postOwnerAvatarReference
         )
-        if (data[position].isBookmarked) {
-            data[position].isBookmarked = false
+        if (post[position].isBookmarked) {
+            post[position].isBookmarked = false
             PostDb.bookMarkPost(bookMark = bookMark, true)
         } else {
-            data[position].isBookmarked = true
+            post[position].isBookmarked = true
             PostDb.bookMarkPost(bookMark = bookMark, false)
         }
 
-        post = PostState.Loaded(data)
-        postMLD.value = post
+        setData()
     }
 
 
+    private fun setData(){
+        postMLD.value = post
+    }
 
     companion object {
         private const val TAG = "ViewModelHomePagePost"
     }
+
+
 
 }
 

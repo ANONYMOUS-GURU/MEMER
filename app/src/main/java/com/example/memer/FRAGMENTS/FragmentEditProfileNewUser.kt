@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.navGraphViewModels
@@ -24,16 +25,24 @@ import com.example.memer.VIEWMODELS.ViewModelUserInfo
 import com.example.memer.databinding.FragmentEditProfileBinding
 import com.example.memer.databinding.FragmentEditProfileNewUserBinding
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FragmentEditProfileNewUser : Fragment(), View.OnClickListener {
 
     private lateinit var binding: FragmentEditProfileNewUserBinding
     private lateinit var navController: NavController
     private val viewModel: ViewModelLogin by navGraphViewModels(R.id.navigation_Log_in)
+    private val viewModelUser:ViewModelUserInfo by activityViewModels()
+    private lateinit var savedStateHandle: SavedStateHandle
 
     companion object{
-        const val TAG = "FEditProfileNewUser"
+        private const val TAG = "FEditProfileNewUser"
+        private const val LOGIN_SUCCESSFUL = "LOGIN_SUCCESSFUL"
     }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -41,13 +50,22 @@ class FragmentEditProfileNewUser : Fragment(), View.OnClickListener {
     ): View {
         binding = FragmentEditProfileNewUserBinding.inflate(inflater, container, false)
         requireActivity().bottomNavigationView.visibility = View.GONE
-        binding.profileImageEditProfileNewUser.setOnClickListener(this)
-        binding.removeProfilePictureEditProfileNewUser.setOnClickListener(this)
+        initView()
         return binding.root
     }
+
+    private fun initView(){
+        binding.profileImageEditProfileNewUser.setOnClickListener(this)
+        binding.removeProfilePictureEditProfileNewUser.setOnClickListener(this)
+
+        setUserTextData(viewModel.userTextEditInfo)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)
+        savedStateHandle  = navController.previousBackStackEntry!!.savedStateHandle
+        savedStateHandle.set(LOGIN_SUCCESSFUL,false)
 
         viewModel.imageRefLD.observe(viewLifecycleOwner,{
             setAvatar(it)
@@ -69,7 +87,15 @@ class FragmentEditProfileNewUser : Fragment(), View.OnClickListener {
                     val bio = binding.bioEditProfileNewUserText.text.toString()
 
                     if(valid(username,nameOfUser,bio)){
-                        viewModel.writeNewUser(UserTextEditInfo(username,nameOfUser,bio,viewModel.imageRefLD.value))
+                        CoroutineScope(Dispatchers.Main).launch {
+                            viewModel.writeNewUser(UserTextEditInfo(username,nameOfUser,bio,viewModel.imageRefLD.value))
+                            viewModelUser.initUser()
+                            withContext(Dispatchers.Main){
+                                savedStateHandle.set(LOGIN_SUCCESSFUL,true)
+                                navController.popBackStack()
+                            }
+                        }
+
                     }
 
                     true
@@ -78,10 +104,7 @@ class FragmentEditProfileNewUser : Fragment(), View.OnClickListener {
             }
         }
     }
-    override fun onStart() {
-        super.onStart()
-        setUserTextData(viewModel.userTextEditInfo)
-    }
+
     private fun setUserTextData(userTextEditInfo: UserTextEditInfo){
         binding.apply {
             usernameEditProfileNewUserText.setText(userTextEditInfo.username)
@@ -107,8 +130,9 @@ class FragmentEditProfileNewUser : Fragment(), View.OnClickListener {
     private fun valid(username:String,nameOfUser:String,bio:String):Boolean{
         return username.isNotEmpty() && nameOfUser.isNotEmpty()
     }
-    override fun onStop() {
-        super.onStop()
+
+    override fun onDestroyView() {
+        super.onDestroyView()
         viewModel.userTextEditInfo = UserTextEditInfo(
             binding.usernameEditProfileNewUserText.text.toString(),
             binding. nameEditProfileNewUserText.text.toString(),

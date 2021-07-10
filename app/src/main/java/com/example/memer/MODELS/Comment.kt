@@ -49,3 +49,19 @@ sealed class CommentState{
     data class Edit(val position:Int,val parentIndex:Int):CommentState()
     data class ReplyTo(val userId:String,val username:String,val commentParentId: String,val parentIndex:Int):CommentState()
 }
+
+enum class CommentDataState{
+    DataNotLoaded,
+    Loading,
+    Loaded,
+    Refreshing,
+    Failed
+}
+
+enum class CommentReplyDataState{
+    Default,
+    Loading,
+    Loaded,
+    Refreshing,
+    Failed
+}

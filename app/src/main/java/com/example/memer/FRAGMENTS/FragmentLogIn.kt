@@ -14,6 +14,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import com.example.memer.HELPERS.GLOBAL_INFORMATION
@@ -35,6 +37,10 @@ import java.util.concurrent.TimeUnit
 import com.example.memer.R
 import com.example.memer.VIEWMODELS.ViewModelLogin
 import com.example.memer.VIEWMODELS.ViewModelUserInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.lang.Exception
 
 class FragmentLogIn : Fragment(), View.OnClickListener {
@@ -47,10 +53,13 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     private lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
     private lateinit var loadingDialog: LoadingDialog
     private lateinit var navController: NavController
+    private  var savedStateHandle:SavedStateHandle? = null
     private val viewModelLogin: ViewModelLogin by viewModels()
+    private val viewModelUser:ViewModelUserInfo by activityViewModels()
 
     companion object {
         private const val TAG = "FragmentLogIn"
+        private const val LOGIN_SUCCESSFUL = "LOGIN_SUCCESSFUL"
     }
 
     override fun onCreateView(
@@ -62,6 +71,15 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
 
         requireActivity().bottomNavigationView.visibility = View.GONE
 
+        initSignInClients()
+
+        initView()
+
+
+        return binding.root
+    }
+
+    private fun initSignInClients(){
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
@@ -114,7 +132,9 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
                 resendToken = token
             }
         }
+    }
 
+    private fun initView(){
         binding.signInFacebook.setOnClickListener(this)
         binding.signInGoogle.setOnClickListener(this)
         binding.signInPhone.setOnClickListener(this)
@@ -126,14 +146,17 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
                 android.R.layout.simple_spinner_dropdown_item,
                 GLOBAL_INFORMATION.COUNTRY_NAMES
             )
-
-
-        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         navController = Navigation.findNavController(view)
+        if(navController.previousBackStackEntry != null){
+            savedStateHandle = navController.previousBackStackEntry!!.savedStateHandle
+            savedStateHandle!!.set(LOGIN_SUCCESSFUL,false)
+        }
+
+
         viewModelLogin.loginStateLD.observe(viewLifecycleOwner, {
             when(it){
                 is LoginState.LogInFailed -> {loginFailed(it.message,it.accessType,it.exception)}
@@ -282,6 +305,17 @@ class FragmentLogIn : Fragment(), View.OnClickListener {
     private fun goToHomePage(message: String,accessType: String){
         loadingDialog.dismissDialog()
         Log.d(TAG, "goToHomePage: Welcome Back")
-        navController.navigate(R.id.action_global_fragmentHomePage)
+        CoroutineScope(Dispatchers.IO).launch{
+            viewModelUser.initUser()
+            withContext(Dispatchers.Main){
+                if(savedStateHandle != null){
+                    savedStateHandle!!.set(LOGIN_SUCCESSFUL,true)
+                    navController.popBackStack()
+                }else{
+                    navController.navigate(R.id.action_global_fragmentHomePage)
+                }
+            }
+        }
+//        navController.navigate(R.id.action_global_fragmentHomePage)
     }
 }

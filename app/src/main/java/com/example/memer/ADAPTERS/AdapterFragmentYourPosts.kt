@@ -12,7 +12,6 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.memer.MODELS.PostContents2
 import com.example.memer.MODELS.PostState
-import com.example.memer.MODELS.PostThumbnailState
 import com.example.memer.R
 import kotlinx.android.synthetic.main.imageview_post_profile_page.view.*
 
@@ -27,23 +26,15 @@ class AdapterFragmentYourPosts(
     }
 
     private var items: List<PostContents2> = ArrayList()
-    private var currentState: PostThumbnailState = PostThumbnailState.InitialLoading
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when (viewType) {
-            0 -> YourPostsAnimationViewHolder(
+         return YourPostsViewHolder(
                 LayoutInflater.from(parent.context)
                     .inflate(R.layout.imageview_post_profile_page, parent, false),
                 itemClickListener,
                 mContext
             )
-            else -> YourPostsViewHolder(
-                LayoutInflater.from(parent.context)
-                    .inflate(R.layout.imageview_post_profile_page, parent, false),
-                itemClickListener,
-                mContext
-            )
-        }
+
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -58,18 +49,9 @@ class AdapterFragmentYourPosts(
     }
 
     override fun getItemCount(): Int {
-        return when (currentState) {
-            is PostThumbnailState.Loaded -> items.size
-            is PostThumbnailState.InitialLoading -> 16
-            is PostThumbnailState.LoadingFailed -> items.size
-            is PostThumbnailState.Refreshing -> items.size
-            is PostThumbnailState.LoadingMoreData -> items.size
-        }
+        return  items.size
     }
 
-    override fun getItemViewType(position: Int): Int {
-        return if (currentState is PostThumbnailState.InitialLoading) 0 else 1
-    }
 
     fun submitList(postList: List<PostContents2>?) {
         if (postList != null) {
@@ -77,9 +59,7 @@ class AdapterFragmentYourPosts(
         }
     }
 
-    fun submitState(postThumbnailState: PostThumbnailState) {
-        currentState = postThumbnailState
-    }
+
 
     class YourPostsViewHolder(
         itemView: View,

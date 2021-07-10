@@ -21,7 +21,6 @@
         android:id="@+id/fragmentChat"
         android:name="com.example.memer.FRAGMENTS.FragmentChat"
         tools:layout="@layout/fragment_chat" />
-
     <fragment
         android:id="@+id/fragmentUserActivity"
         android:name="com.example.memer.FRAGMENTS.FragmentNotifications"
@@ -59,6 +58,19 @@
             app:argType="boolean"
             android:defaultValue="true" />
     </fragment>
+    <fragment
+        android:id="@+id/fragmentOnBoarding"
+        android:name="com.example.memer.FRAGMENTS.FragmentOnBoarding"
+        tools:layout="@layout/fragment_on_boarding" />
+    <fragment
+        android:id="@+id/fragmentEditPost"
+        android:name="com.example.memer.FRAGMENTS.FragmentEditPost"
+        tools:layout="@layout/fragment_edit_post">
+        <argument
+            android:name="post"
+            app:argType="com.example.memer.MODELS.PostContents2" />
+    </fragment>
+
 
     <include app:graph = "@navigation/make_post_nav_graph"/>
     <include app:graph = "@navigation/nav_profile"/>
@@ -84,22 +96,32 @@
     <action android:id="@+id/action_global_fragmentLikes"
         app:destination="@id/fragmentLikes" />
     <action android:id="@+id/action_global_fragmentLogIn"
+        app:destination="@id/navigation_Log_in" />
+    <action android:id="@+id/action_global_LogOut"
         app:destination="@id/navigation_Log_in"
         app:launchSingleTop="false"
         app:popUpTo="@+id/nav_graph"
         app:popUpToInclusive="true"/>
+    <action android:id="@+id/action_global_fragmentEditPost"
+        app:destination="@id/fragmentEditPost" />
+    <action android:id="@+id/action_global_fragmentSinglePost"
+        app:destination="@id/fragmentSinglePost" />
+
     <fragment
-        android:id="@+id/fragmentOnBoarding"
-        android:name="com.example.memer.FRAGMENTS.FragmentOnBoarding"
-        tools:layout="@layout/fragment_on_boarding" />
-    <fragment
-        android:id="@+id/fragmentEditPost"
-        android:name="com.example.memer.FRAGMENTS.FragmentEditPost"
-        tools:layout="@layout/fragment_edit_post">
+        android:id="@+id/fragmentSinglePost"
+        android:name="com.example.memer.FRAGMENTS.FragmentSinglePost"
+        android:label="FragmentSinglePost">
         <argument
-            android:name="post"
-            app:argType="com.example.memer.MODELS.PostContents2" />
+            android:name="postId"
+            app:argType="string" />
+        <deepLink
+            android:id="@+id/deepLink"
+            app:uri="www.memer.example.com/{postId}/{sharedBy}" />
+        <argument
+            android:name="sharedBy"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
-    <action android:id="@+id/action_global_fragmentEditPost" app:destination="@id/fragmentEditPost" />
 
 </navigation>

@@ -21,6 +21,12 @@ object PostDb {
 
     }
 
+    suspend fun getSinglePost(postId: String): DocumentSnapshot {
+        val db  = FirebaseFirestore.getInstance()
+        return db.collection(FireStoreCollection.Post.value).
+        whereEqualTo(PostElement.PostId.value , postId).get().await().documents[0]
+    }
+
     fun editPost(postCaption: String, postId: String) {
         val db = FirebaseFirestore.getInstance()
         db.collection(FireStoreCollection.Post.value).document(postId).update(
@@ -144,6 +150,8 @@ object PostDb {
         mLike: Likes,
         incrementLike: Boolean
     ) {
+        // TODO(Increment Like should be decided by checking whether or not document exists in LikeDb)
+
         val db = FirebaseFirestore.getInstance()
 
         val batch = db.batch()
@@ -276,12 +284,17 @@ object PostDb {
                 .limit(docLimit).get().await().documents
         else
             db.collection(FireStoreCollection.Comment.value).whereEqualTo(CommentElement.CommentPostId.value, postId)
+                .whereEqualTo(CommentElement.CommentParentId.value,null)
                 .orderBy(CommentElement.CreatedAt.value, Query.Direction.ASCENDING)
                 .startAfter(lastDocument).limit(docLimit).get().await().documents
 
         val mData = ArrayList<DocumentSnapshot>()
         mDocuments.forEach {
             mData.add(it)
+        }
+
+        mData.forEach {
+            Log.d(TAG, "getCommentPost: ${it.getString(CommentElement.CommentContent.value)}")
         }
 
         return mData
@@ -301,7 +314,7 @@ object PostDb {
                 .limit(docLimit).get().await().documents
         else
             db.collection(FireStoreCollection.Comment.value).whereEqualTo(CommentElement.CommentParentId.value, commentParentId)
-                .orderBy("time", Query.Direction.ASCENDING)
+                .orderBy(CommentElement.CreatedAt.value, Query.Direction.ASCENDING)
                 .startAfter(lastDocument).limit(docLimit).get().await().documents
 
 

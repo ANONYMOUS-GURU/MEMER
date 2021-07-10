@@ -85,7 +85,6 @@ class FragmentAddPost : Fragment(), View.OnTouchListener {
 
         Log.d(TAG, "onCreate: ")
         viewModel.croppedBitmapLD.observe(this, {
-            Log.d(TAG, "onCreate: fired")
             addImageViews(it)
         })
     }
@@ -138,6 +137,8 @@ class FragmentAddPost : Fragment(), View.OnTouchListener {
                 }
             }
         }.attach()
+        reDrawPhotos(viewModel.photoMap)
+
     }
 
     private fun launchCamera() {
@@ -421,12 +422,6 @@ class FragmentAddPost : Fragment(), View.OnTouchListener {
         return screenshot
     }
 
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart: ")
-        reDrawPhotos(viewModel.photoMap)
-    }
-
     private fun reDrawPhotos(mp: HashMap<Int, BitmapModel>) {
         for ((_, value) in mp) {
             val imgView = ImageView(context)
@@ -461,9 +456,10 @@ class FragmentAddPost : Fragment(), View.OnTouchListener {
 
     }
 
-    override fun onStop() {
-        super.onStop()
-        Log.d(TAG, "onStop: ")
+    override fun onDestroyView() {
+        super.onDestroyView()
+        Log.d(TAG, "onDestroyView: ")
         viewModel.photoMap = photoMap
     }
+
 }

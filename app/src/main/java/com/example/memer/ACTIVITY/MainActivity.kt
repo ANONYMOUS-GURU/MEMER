@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var navController: NavController
     private lateinit var viewModel:ViewModelUserInfo
-    private lateinit var viewModelHomePage: ViewModelHomePagePost
+//    private lateinit var viewModelHomePage: ViewModelHomePagePost
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,10 +44,10 @@ class MainActivity : AppCompatActivity() {
 
         viewModel = ViewModelProvider(this,ViewModelUserFactory(userData,application)).get(ViewModelUserInfo::class.java)
 
-        if(userData!=null){
-//            val post  = intent.extras?.get("Post") as ArrayList<PostHomePage>
-            viewModelHomePage = ViewModelProvider(this,ViewModelHomeFactory(userData.userId)).get(ViewModelHomePagePost::class.java)
-        }
+//        if(userData!=null){
+////            val post  = intent.extras?.get("Post") as ArrayList<PostHomePage>
+//            viewModelHomePage = ViewModelProvider(this,ViewModelHomeFactory(userData.userId)).get(ViewModelHomePagePost::class.java)
+//        }
 
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController

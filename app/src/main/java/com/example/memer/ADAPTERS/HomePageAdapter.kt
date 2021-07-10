@@ -29,25 +29,16 @@ class HomePageAdapter(
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var items: List<PostHomePage> = ArrayList()
-    private  var currentState:PostState = PostState.InitialLoading
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return when(viewType){
-            0 -> HomePageAnimationViewHolder(
+        return  HomePageViewHolder(
                 LayoutInflater.from(parent.context).inflate(R.layout.single_meme_view, parent, false),
                 itemClickListener,
                 onMenuClick,
                 mContext,
                 userId
             )
-            else -> HomePageViewHolder(
-                LayoutInflater.from(parent.context).inflate(R.layout.single_meme_view, parent, false),
-                itemClickListener,
-                onMenuClick,
-                mContext,
-                userId
-            )
-        }
+
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -62,27 +53,19 @@ class HomePageAdapter(
     }
 
     override fun getItemCount(): Int {
-        return when(currentState){
-            is PostState.Loaded -> items.size
-            is PostState.InitialLoading -> 2
-            is PostState.LoadingFailed -> items.size
-            is PostState.Refreshing -> items.size
-            is PostState.LoadingMoreData -> items.size
-        }
+        return items.size
     }
 
-    fun getPost(position: Int) : PostHomePage{
+    fun getPost(position: Int):PostHomePage{
         return items[position]
     }
+
 
 
     fun submitList(postList: List<PostHomePage>?) {
         if (postList != null) {
             items = postList
         }
-    }
-    fun submitState(postState: PostState){
-        currentState = postState
     }
 
     class HomePageViewHolder(
@@ -239,10 +222,7 @@ class HomePageAdapter(
 
     class HomePageAnimationViewHolder(
         itemView: View,
-        private val itemClickListener: ItemClickListener,
-        private val onMenuClick: OnMenuClickListener,
-        private val mContext: Context,
-        private val userId: String
+        private val mContext: Context
     ) : RecyclerView.ViewHolder(itemView) {
 
         private val rootLayout: ConstraintLayout = itemView.singleMemeConstraintRootLayout
@@ -291,9 +271,7 @@ class HomePageAdapter(
 
     }
 
-    override fun getItemViewType(position: Int): Int {
-        return if(currentState is PostState.InitialLoading)  0 else 1
-    }
+
 
 
     interface ItemClickListener {

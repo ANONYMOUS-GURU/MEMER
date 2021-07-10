@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     tools:context=".FRAGMENTS.FragmentComments">
 
     <androidx.appcompat.widget.Toolbar
@@ -26,15 +26,36 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <androidx.recyclerview.widget.RecyclerView
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollViewComments"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/commentComposeLinearLayout"
-        android:layout_below="@+id/commentPageToolbar"
-        android:id="@+id/recyclerViewCommentsPage"
-        android:layout_marginTop="8dp"
-        android:scrollbars="vertical"
-        tools:listitem="@layout/comment_single_view"/>
+        android:layout_height="match_parent"
+        android:layout_below="@id/commentPageToolbar"
+        android:layout_marginBottom="16dp"
+        android:layout_above="@id/commentComposeLinearLayout">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewCommentsPage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <ProgressBar
+            android:id="@+id/progressBarComments"
+            style="?android:attr/progressBarStyle"
+            android:padding="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:background="@android:color/transparent"/>
+
+    </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
 
     <LinearLayout

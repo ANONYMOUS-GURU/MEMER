@@ -24,7 +24,7 @@ class FragmentEditPost : Fragment() , View.OnClickListener {
 
 
     private val args:FragmentEditPostArgs by navArgs()
-    private lateinit var post:PostContents2
+    private lateinit var posts:PostContents2
     private lateinit var navController:NavController
     private lateinit var binding:FragmentEditPostBinding
     private lateinit var viewModel:ViewModelEditPost
@@ -33,8 +33,8 @@ class FragmentEditPost : Fragment() , View.OnClickListener {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentEditPostBinding.inflate(inflater,container,false)
-        post = args.post
-        viewModel = ViewModelProvider(this,ViewModelEditPostFactory(post)).get(ViewModelEditPost::class.java)
+        posts = args.post
+        viewModel = ViewModelProvider(this,ViewModelEditPostFactory(posts)).get(ViewModelEditPost::class.java)
         initView()
         return binding.root
     }

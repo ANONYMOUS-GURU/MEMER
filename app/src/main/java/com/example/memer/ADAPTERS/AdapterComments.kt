@@ -1,17 +1,21 @@
 package com.example.memer.ADAPTERS
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.memer.MODELS.Comment
+import com.example.memer.MODELS.CommentReplyDataState
 import com.example.memer.R
 import com.example.memer.databinding.FragmentCommentsBinding
 import kotlinx.android.synthetic.main.comment_single_view.view.*
@@ -28,6 +32,7 @@ class AdapterComments(
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var items: ArrayList<Pair<Comment,ArrayList<Comment>>> = ArrayList()
+    private var replyDataState:ArrayList<CommentReplyDataState> = ArrayList()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return CommentsViewHolder(
@@ -38,21 +43,22 @@ class AdapterComments(
             userId
         )
     }
-
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is CommentsViewHolder -> {
-                holder.bind(items[position])
+                holder.bind(items[position], replyDataState[position])
             }
         }
     }
-
     override fun getItemCount(): Int {
         return items.size
     }
 
     fun submitList(commentList: ArrayList<Pair<Comment,ArrayList<Comment>>>) {
         items = commentList
+    }
+    fun submitReplyState(commentReplyDataState: ArrayList<CommentReplyDataState>){
+        replyDataState = commentReplyDataState
     }
     fun getUsername(position: Int):String{
         return items[position].first.commentOwnerUsername
@@ -83,11 +89,12 @@ class AdapterComments(
         private val showReplies: TextView = itemView.showComments
         private val repliesRecyclerView: RecyclerView = itemView.replyRecyclerView
         private val commentRootView:View = itemView.commentRootView
+        private val progressBar:ProgressBar = itemView.progressBarCommentsReplies
 
         private lateinit var mAdapter: AdapterReplies
 
 
-        fun bind(commentReplyPair: Pair<Comment,ArrayList<Comment>>) {
+        fun bind(commentReplyPair: Pair<Comment,ArrayList<Comment>>,commentReplyDataState: CommentReplyDataState) {
 
             val comment = commentReplyPair.first
             val replyList = commentReplyPair.second
@@ -111,11 +118,28 @@ class AdapterComments(
             }
             else{
                 showReplies.visibility =View.GONE
-                repliesRecyclerView.visibility = View.GONE
+//                repliesRecyclerView.visibility = View.GONE
+                mAdapter = AdapterReplies(itemClickListener, mContext,userId)
+                mAdapter.submitList(replyList)
+                mAdapter.submitIndex(absoluteAdapterPosition)
+
+                repliesRecyclerView.apply {
+                    layoutManager = LinearLayoutManager(mContext)
+                    itemAnimator = DefaultItemAnimator()
+                    adapter = mAdapter
+                }
             }
 
             username.text = comment.commentOwnerUsername
             commentContent.text = comment.commentContent
+
+            when(commentReplyDataState){
+                CommentReplyDataState.Loaded -> progressBar.visibility = View.GONE
+                CommentReplyDataState.Default -> progressBar.visibility = View.GONE
+                CommentReplyDataState.Failed -> progressBar.visibility = View.VISIBLE  //TODO(CHANGE)
+                CommentReplyDataState.Loading -> progressBar.visibility = View.VISIBLE
+                CommentReplyDataState.Refreshing -> progressBar.visibility = View.VISIBLE  //TODO(CHANGE)
+            }
 
             val requestOptionsAvatar = RequestOptions()
                 .placeholder(R.drawable.default_avatar)
@@ -128,6 +152,23 @@ class AdapterComments(
                 .into(userAvatar)
 
             timeComment.text = getTime(comment.createdAt)
+
+            if(comment.isLiked){
+                likeComment.setImageDrawable(
+                    AppCompatResources.getDrawable(
+                        mContext,
+                        R.drawable.like_icon_filled
+                    )
+                )
+            }else{
+                likeComment.setImageDrawable(
+                    AppCompatResources.getDrawable(
+                        mContext,
+                        R.drawable.like_icon_border
+                    )
+                )
+            }
+
 
             likeComment.setOnClickListener(this)
             userAvatar.setOnClickListener(this)
@@ -175,6 +216,10 @@ class AdapterComments(
         fun onReplyClick(position: Int,parentIndex:Int = -1)
         fun onShowReplies(position: Int,parentIndex:Int = -1)
         fun onEditComment(position: Int,parentIndex: Int = -1)
+    }
+
+    companion object{
+        private const val TAG = "AdapterComments"
     }
 }
 

@@ -1,26 +1,13 @@
 package com.example.memer.ACTIVITY
 
-import android.content.Context
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-
 import android.util.Log
-import androidx.lifecycle.viewModelScope
-import com.example.memer.FIRESTORE.PostDb
-import com.example.memer.FRAGMENTS.FragmentHomePage
+import androidx.appcompat.app.AppCompatActivity
 import com.example.memer.HELPERS.InternalStorage
-import com.example.memer.MODELS.LikeType
-import com.example.memer.MODELS.PostContents2.Companion.toPostContents2
-import com.example.memer.MODELS.PostHomePage
 import com.example.memer.MODELS.UserData
-import com.example.memer.R
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class SplashActivity : AppCompatActivity() {
 

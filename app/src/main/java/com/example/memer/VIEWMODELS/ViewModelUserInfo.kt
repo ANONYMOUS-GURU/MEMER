@@ -27,17 +27,29 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
 
     private val appContext = application
 
-    private val dataPostThumbnail: ArrayList<PostContents2> = ArrayList()
-    private var post: PostThumbnailState = PostThumbnailState.InitialLoading
-    private val postMLD: MutableLiveData<PostThumbnailState> = MutableLiveData()
-    val postLD: LiveData<PostThumbnailState>
+
+    private var post: ArrayList<PostContents2> = ArrayList()
+    private val postMLD: MutableLiveData<ArrayList<PostContents2>> = MutableLiveData()
+    val postLD: LiveData<ArrayList<PostContents2>>
         get() = postMLD
 
-    private var dataPostComplete: ArrayList<PostHomePage> = ArrayList()
-    private var postComplete: PostState = PostState.InitialLoading
-    private val postCompleteMLD: MutableLiveData<PostState> = MutableLiveData()
-    val postCompleteLD: LiveData<PostState>
+    private var postComplete: ArrayList<PostHomePage> = ArrayList()
+    private val postCompleteMLD: MutableLiveData<ArrayList<PostHomePage>> = MutableLiveData()
+    val postCompleteLD: LiveData<ArrayList<PostHomePage>>
         get() = postCompleteMLD
+
+
+    private var state:PostState = PostState.DataNotLoaded
+    private var stateMLD: MutableLiveData<PostState> =
+        MutableLiveData<PostState>()
+    val stateLD: LiveData<PostState>
+        get() = stateMLD
+
+    private var stateListPost:PostState = PostState.DataNotLoaded
+    private var stateListPostMLD: MutableLiveData<PostState> =
+        MutableLiveData<PostState>()
+    val stateListPostLD: LiveData<PostState>
+        get() = stateListPostMLD
 
     private val docLimit: Long = 40
     private var lastPostDocumentSnapshot: DocumentSnapshot? = null
@@ -46,6 +58,10 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
     init {
         user = initUser
         userMLD.value = user
+
+        stateMLD.value = state
+        stateListPostMLD.value = stateListPost
+
         postMLD.value = post
         postCompleteMLD.value = postComplete
     }
@@ -80,20 +96,18 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
         return appContext
     }
 
-
-    fun initUser() {
+     suspend fun initUser() {
 
         /*
          * Check if one needs to update the local user cache . Only applicable in case of non-user
          * based change of data or no connectivity for a very long time
          * */
 
-        viewModelScope.launch {
-            user = InternalStorage.readUser(getApplication())
-            withContext(Dispatchers.Main) {
-                userMLD.value = user
-            }
-        }
+        user = InternalStorage.readUser(getApplication())
+         withContext(Dispatchers.Main){
+             userMLD.value = user
+         }
+
     }
 
     fun fetchAndReInitUser() {
@@ -122,15 +136,18 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
 
 
     fun getUserPosts(userId: String) {
+        state = PostState.Loading
+        stateMLD.value = state
         moreDataPresent = false
         viewModelScope.launch {
             val docs = PostDb.getPostsUsers(null, docLimit, userId)
             lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
             docs.forEach {
-                dataPostThumbnail.add(it.toPostContents2())
+                post.add(it.toPostContents2())
             }
             withContext(Dispatchers.Main) {
-                post = PostThumbnailState.Loaded(dataPostThumbnail)
+                state = PostState.Loaded
+                stateMLD.value = state
                 postMLD.value = post
                 moreDataPresent = docs.size >= docLimit
             }
@@ -138,17 +155,18 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
     }
 
     fun getMoreUserPosts(userId: String) {
-        post = PostThumbnailState.LoadingMoreData(dataPostThumbnail)
-        postMLD.value = post
+        state = PostState.Loading
+        stateMLD.value = state
         moreDataPresent = false
         viewModelScope.launch {
             val docs = PostDb.getPostsUsers(lastPostDocumentSnapshot, docLimit, userId)
             lastPostDocumentSnapshot = if (docs.size == 0) null else docs.last()
             docs.forEach {
-                dataPostThumbnail.add(it.toPostContents2())
+                post.add(it.toPostContents2())
             }
             withContext(Dispatchers.Main) {
-                post = PostThumbnailState.Loaded(dataPostThumbnail)
+                state = PostState.Loaded
+                stateMLD.value = state
                 postMLD.value = post
                 moreDataPresent = docs.size >= docLimit
             }
@@ -156,8 +174,11 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
     }
 
     fun initListPost(userId: String) {
+        stateListPost = PostState.Loading
+        stateListPostMLD.value = stateListPost
+
         viewModelScope.launch {
-            dataPostThumbnail.forEach {
+            post.forEach {
                 val userLike = PostDb.getUserLikes(
                     LikeType.PostLike,
                     it.postId,
@@ -168,7 +189,7 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
                     it.postId,
                     userId
                 )
-                dataPostComplete.add(
+                postComplete.add(
                     PostHomePage(
                         postContents = it,
                         isLiked = userLike,
@@ -178,7 +199,8 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
                 )
             }
             withContext(Dispatchers.Main) {
-                postComplete = PostState.Loaded(dataPostComplete)
+                stateListPost = PostState.Loaded
+                stateListPostMLD.value = stateListPost
                 postCompleteMLD.value = postComplete
             }
 
@@ -187,17 +209,17 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
     }
 
     fun getMoreListPost(userId: String) {
-        post = PostThumbnailState.LoadingMoreData(dataPostThumbnail)
-        postMLD.value = post
+        state = PostState.Loading
+        stateMLD.value = state
+        stateListPost = PostState.Loading
+        stateListPostMLD.value = stateListPost
 
-        postComplete = PostState.LoadingMoreData(dataPostComplete)
-        postCompleteMLD.value = postComplete
         moreDataPresent = false
         viewModelScope.launch {
             val docs = PostDb.getPostsUsers(lastPostDocumentSnapshot, docLimit, userId)
 
             docs.forEach {
-                dataPostThumbnail.add(it.toPostContents2())
+                post.add(it.toPostContents2())
                 val userLike = PostDb.getUserLikes(
                     LikeType.PostLike,
                     it.getString("postId")!!,
@@ -208,7 +230,7 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
                     it.getString("postId")!!,
                     userId,
                 )
-                dataPostComplete.add(
+                postComplete.add(
                     PostHomePage(
                         postContents = it.toPostContents2(),
                         isLiked = userLike,
@@ -218,8 +240,11 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
                 )
             }
             withContext(Dispatchers.Main) {
-                post = PostThumbnailState.Loaded(dataPostThumbnail)
-                postComplete = PostState.Loaded(dataPostComplete)
+                state = PostState.Loaded
+                stateMLD.value = state
+
+                stateListPost = PostState.Loaded
+                stateMLD.value = stateListPost
 
                 postMLD.value = post
                 postCompleteMLD.value = postComplete
@@ -253,8 +278,7 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
 
         PostDb.updateLikes(mLike = mLike, incrementLike = incrementLike)
 
-        dataPostComplete[position].isLiked = !dataPostComplete[position].isLiked
-        postComplete = PostState.Loaded(dataPostComplete)
+        postComplete[position].isLiked = !postComplete[position].isLiked
         postCompleteMLD.value = postComplete
     }
 
@@ -277,15 +301,13 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
             postOwnerAvatarReference = postOwnerAvatarReference
         )
 
-        if (dataPostComplete[position].isBookmarked) {
-            dataPostComplete[position].isBookmarked = false
+        if (postComplete[position].isBookmarked) {
+            postComplete[position].isBookmarked = false
             PostDb.bookMarkPost(bookMark = bookMark, undoBookMark = true)
         } else {
-            dataPostComplete[position].isBookmarked = true
+            postComplete[position].isBookmarked = true
             PostDb.bookMarkPost(bookMark = bookMark, undoBookMark = false)
         }
-
-        postComplete = PostState.Loaded(dataPostComplete)
         postCompleteMLD.value = postComplete
     }
 
@@ -299,16 +321,15 @@ class ViewModelUserInfo(initUser: UserData?, application: Application) : ViewMod
             postId = postId
         )
 
-        dataPostComplete[position].postContents.postDescription = postCaption
-        postComplete = PostState.Loaded(dataPostComplete)
+        postComplete[position].postContents.postDescription = postCaption
         postCompleteMLD.value = postComplete
 
     }
 
+
+
     companion object {
         private const val TAG = "VMUserInfo"
-        private const val ACCESS_GOOGLE = "GOOGLE"
-        private const val ACCESS_PHONE = "PHONE"
     }
 
 }

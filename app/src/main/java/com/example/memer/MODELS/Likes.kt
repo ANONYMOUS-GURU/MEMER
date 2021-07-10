@@ -9,10 +9,12 @@ import java.util.*
 
 data class Likes(
     val likeId:String,
+
     val userId:String,
     val username:String,
     val nameOfUser:String,
     val userAvatarReference:String?,
+
     val likeType:String,
     val likeTypeId:String,
     @ServerTimestamp
